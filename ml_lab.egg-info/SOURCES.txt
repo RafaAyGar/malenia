@@ -1,5 +1,0 @@
-setup.py
-ml_lab.egg-info/PKG-INFO
-ml_lab.egg-info/SOURCES.txt
-ml_lab.egg-info/dependency_links.txt
-ml_lab.egg-info/top_level.txt
