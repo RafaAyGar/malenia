@@ -1,14 +1,14 @@
 from setuptools import setup
 
-from ml_lab import __version__
+from malenia import __version__
 
 setup(
-    name='ml_lab',
+    name='malenia',
     version=__version__,
 
-    url='https://github.com/RafaAyGar/ml-lab',
+    url='https://github.com/RafaAyGar/malenia',
     author='Rafael Ayllón Gavilán',
     author_email='rafaaylloningeniero@gmail.com',
 
-    py_modules=['ml_lab'],
+    py_modules=['malenia'],
 )

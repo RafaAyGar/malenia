@@ -1,6 +1,6 @@
 import os
 import sys
-import ml_lab
+import malenia
 from joblib import dump
 
 
@@ -21,7 +21,7 @@ class Launcher:
         self.seeds = seeds
         self.submission_params = submission_params
 
-        self.condor_files_path = "test_condor_files/"
+        self.condor_files_path = "condor_files/"
         self.condor_tmp_path = os.path.join(self.condor_files_path, "tmp")
 
         # remove all files and folders from self.condor_files_path if they exist
@@ -46,7 +46,7 @@ class Launcher:
         for part in method_name.split("_")[1:]:
             method_name_specif += part + "_"
         method_name_specif = method_name_specif[:-1] # remove last "_"
-        
+
         return method_name_global, method_name_specif
 
     def launch(
@@ -112,7 +112,7 @@ class Launcher:
 
         # get python environment path
         python_path = sys.executable
-        thread_path = os.path.join(ml_lab.__path__[0], "thread.py")
+        thread_path = os.path.join(malenia.__path__[0], "thread.py")
         if not os.path.exists(thread_path):
             raise Exception("thread.py not found in", thread_path)
 

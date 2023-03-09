@@ -1,0 +1,5 @@
+setup.py
+malenia.egg-info/PKG-INFO
+malenia.egg-info/SOURCES.txt
+malenia.egg-info/dependency_links.txt
+malenia.egg-info/top_level.txt

@@ -2,7 +2,7 @@ import sys
 from logging import StreamHandler, getLogger
 from pandas import Timestamp
 from joblib import load
-from ml_lab.save_and_load import save_method, save_predictions
+from malenia.save_and_load import save_method, save_predictions
 
 console = StreamHandler()
 log = getLogger()
