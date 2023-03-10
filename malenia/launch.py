@@ -67,14 +67,20 @@ class Launcher:
                     cv_path = self._dump_in_condor_tmp_path("cv", self.cv)
                     method_path = self._dump_in_condor_tmp_path(method_name, method)
                     results_filename = "seed_" + str(seed)
-                    results_path = os.path.join(method_name_global, method_name_specif, dataset.name, results_filename)
+                    results_path = os.path.join(self.results_path, method_name_global, method_name_specif, dataset.name, results_filename)
+                    # print(results_path)
+                    # print(results_path + "_train.csv")
+                    # print(os.path.exists(results_path + "_train.csv"))
+                    # print(results_path + "_test.csv")
+                    # print(os.path.exists(results_path + "_test.csv"))
+                    # exit()
                     if (
                         os.path.exists(results_path + "_test.csv")
                         and (os.path.exists(results_path + "_train.csv") or not predict_on_train)
                         and overwrite_predictions == False
                         and overwrite_fitted_methods == False
                     ):
-                        print(f"SKIPPING - {results_filename} already exists")
+                        print(f"SKIPPING - {results_path} already exists")
                         continue
 
                     params += (
