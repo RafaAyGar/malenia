@@ -220,250 +220,246 @@ class Results:
     #     # all done...
     #     return cd,f
 
+    def get_CDD(self, metric_name=None, alpha=0.1, data="default", save_file=None):
+        """Plot critical difference diagrams.
 
+        References
+        ----------
+        original implementation by Aaron Bostrom, modified by Markus Löning.
+        """
+        if isinstance(data, str) and data == "default":
+            dataset = self.results_by_method_dataset
+        else:
+            dataset = data
 
+        data = (
+            dataset.copy()
+            .loc[:, ["dataset", "method", metric_name]]
+            .pivot(index="method", columns="dataset", values=metric_name)
+            # .sort_values(by=["strategy"], ascending=False)
+            .values
+        )
 
-    # def get_CDD(self, metric_name=None, alpha=0.1, data="default", save_file=None):
-    #     """Plot critical difference diagrams.
+        if "mae" in metric_name:
+            data = data * (-1)
+        n_datasets, n_methods = data.shape  # [n_datasets,n_methods] = size(s); correct
+        labels = list(dataset['method'])
 
-    #     References
-    #     ----------
-    #     original implementation by Aaron Bostrom, modified by Markus Löning.
-    #     """
-    #     if isinstance(data, str) and data == "default":
-    #         dataset = self.results_by_method_dataset
-    #     else:
-    #         dataset = data
+        r = np.argsort(data, axis=0)[::-1]
+        S = np.sort(data, axis=0)[::-1]
+        idx = n_datasets * np.tile(np.arange(n_methods), (n_datasets, 1)).T + r.T
+        R = np.asfarray(np.tile(np.arange(n_datasets) + 1, (n_methods, 1)))
+        S = S.T
 
-    #     data = (
-    #         dataset.copy()
-    #         .loc[:, ["dataset", "method", metric_name]]
-    #         .pivot(index="method", columns="dataset", values=metric_name)
-    #         # .sort_values(by=["strategy"], ascending=False)
-    #         .values
-    #     )
+        for i in range(n_methods):
+            for j in range(n_datasets):
+                index = S[i, j] == S[i, :]
+                R[i, index] = np.mean(R[i, index], dtype=np.float64)
 
-    #     if "mae" in metric_name:
-    #         data = data * (-1)
-    #     n_datasets, n_methods = data.shape  # [n_datasets,n_methods] = size(s); correct
-    #     labels = list(dataset['method'])
+        r = np.asfarray(r)
+        r.T.flat[idx] = R
+        r = r.T
 
-    #     r = np.argsort(data, axis=0)[::-1]
-    #     S = np.sort(data, axis=0)[::-1]
-    #     idx = n_datasets * np.tile(np.arange(n_methods), (n_datasets, 1)).T + r.T
-    #     R = np.asfarray(np.tile(np.arange(n_datasets) + 1, (n_methods, 1)))
-    #     S = S.T
+        if alpha == 0.01:
+            # fmt: off
+            qalpha = [0.000, 2.576, 2.913, 3.113, 3.255, 3.364, 3.452, 3.526,
+                      3.590, 3.646, 3.696, 3.741, 3.781, 3.818,
+                      3.853, 3.884, 3.914, 3.941, 3.967, 3.992, 4.015, 4.037,
+                      4.057, 4.077, 4.096, 4.114, 4.132, 4.148,
+                      4.164, 4.179, 4.194, 4.208, 4.222, 4.236, 4.249, 4.261,
+                      4.273, 4.285, 4.296, 4.307, 4.318, 4.329,
+                      4.339, 4.349, 4.359, 4.368, 4.378, 4.387, 4.395, 4.404,
+                      4.412, 4.420, 4.428, 4.435, 4.442, 4.449,
+                      4.456]
+            # fmt: on
+        elif alpha == 0.05:
+            # fmt: off
+            qalpha = [0.000, 1.960, 2.344, 2.569, 2.728, 2.850, 2.948, 3.031,
+                      3.102, 3.164, 3.219, 3.268, 3.313, 3.354,
+                      3.391, 3.426, 3.458, 3.489, 3.517, 3.544, 3.569, 3.593,
+                      3.616, 3.637, 3.658, 3.678, 3.696, 3.714,
+                      3.732, 3.749, 3.765, 3.780, 3.795, 3.810, 3.824, 3.837,
+                      3.850, 3.863, 3.876, 3.888, 3.899, 3.911,
+                      3.922, 3.933, 3.943, 3.954, 3.964, 3.973, 3.983, 3.992,
+                      4.001, 4.009, 4.017, 4.025, 4.032, 4.040,
+                      4.046]
+            # fmt: on
+        elif alpha == 0.1:
+            # fmt: off
+            qalpha = [0.000, 1.645, 2.052, 2.291, 2.460, 2.589, 2.693, 2.780,
+                      2.855, 2.920, 2.978, 3.030, 3.077, 3.120,
+                      3.159, 3.196, 3.230, 3.261, 3.291, 3.319, 3.346, 3.371,
+                      3.394, 3.417, 3.439, 3.459, 3.479, 3.498,
+                      3.516, 3.533, 3.550, 3.567, 3.582, 3.597, 3.612, 3.626,
+                      3.640, 3.653, 3.666, 3.679, 3.691, 3.703,
+                      3.714, 3.726, 3.737, 3.747, 3.758, 3.768, 3.778, 3.788,
+                      3.797, 3.806, 3.814, 3.823, 3.831, 3.838,
+                      3.846]
+            # fmt: on
+        else:
+            raise Exception("alpha must be 0.01, 0.05 or 0.1")
 
-    #     for i in range(n_methods):
-    #         for j in range(n_datasets):
-    #             index = S[i, j] == S[i, :]
-    #             R[i, index] = np.mean(R[i, index], dtype=np.float64)
+        cd = qalpha[n_datasets - 1] * np.sqrt(
+            n_datasets * (n_datasets + 1) / (6 * n_methods)
+        )
 
-    #     print(r)
-    #     r = np.asfarray(r)
-    #     r.T.flat[idx] = R
-    #     r = r.T
+        # set up plot
+        fig, ax = plt.subplots(1)
+        ax.set_xlim(-0.5, 1.5)
+        ax.set_ylim(0, 140)
+        ax.set_axis_off()
 
-    #     if alpha == 0.01:
-    #         # fmt: off
-    #         qalpha = [0.000, 2.576, 2.913, 3.113, 3.255, 3.364, 3.452, 3.526,
-    #                   3.590, 3.646, 3.696, 3.741, 3.781, 3.818,
-    #                   3.853, 3.884, 3.914, 3.941, 3.967, 3.992, 4.015, 4.037,
-    #                   4.057, 4.077, 4.096, 4.114, 4.132, 4.148,
-    #                   4.164, 4.179, 4.194, 4.208, 4.222, 4.236, 4.249, 4.261,
-    #                   4.273, 4.285, 4.296, 4.307, 4.318, 4.329,
-    #                   4.339, 4.349, 4.359, 4.368, 4.378, 4.387, 4.395, 4.404,
-    #                   4.412, 4.420, 4.428, 4.435, 4.442, 4.449,
-    #                   4.456]
-    #         # fmt: on
-    #     elif alpha == 0.05:
-    #         # fmt: off
-    #         qalpha = [0.000, 1.960, 2.344, 2.569, 2.728, 2.850, 2.948, 3.031,
-    #                   3.102, 3.164, 3.219, 3.268, 3.313, 3.354,
-    #                   3.391, 3.426, 3.458, 3.489, 3.517, 3.544, 3.569, 3.593,
-    #                   3.616, 3.637, 3.658, 3.678, 3.696, 3.714,
-    #                   3.732, 3.749, 3.765, 3.780, 3.795, 3.810, 3.824, 3.837,
-    #                   3.850, 3.863, 3.876, 3.888, 3.899, 3.911,
-    #                   3.922, 3.933, 3.943, 3.954, 3.964, 3.973, 3.983, 3.992,
-    #                   4.001, 4.009, 4.017, 4.025, 4.032, 4.040,
-    #                   4.046]
-    #         # fmt: on
-    #     elif alpha == 0.1:
-    #         # fmt: off
-    #         qalpha = [0.000, 1.645, 2.052, 2.291, 2.460, 2.589, 2.693, 2.780,
-    #                   2.855, 2.920, 2.978, 3.030, 3.077, 3.120,
-    #                   3.159, 3.196, 3.230, 3.261, 3.291, 3.319, 3.346, 3.371,
-    #                   3.394, 3.417, 3.439, 3.459, 3.479, 3.498,
-    #                   3.516, 3.533, 3.550, 3.567, 3.582, 3.597, 3.612, 3.626,
-    #                   3.640, 3.653, 3.666, 3.679, 3.691, 3.703,
-    #                   3.714, 3.726, 3.737, 3.747, 3.758, 3.768, 3.778, 3.788,
-    #                   3.797, 3.806, 3.814, 3.823, 3.831, 3.838,
-    #                   3.846]
-    #         # fmt: on
-    #     else:
-    #         raise Exception("alpha must be 0.01, 0.05 or 0.1")
+        tics = np.tile(np.array(np.arange(n_datasets)) / (n_datasets - 1), (3, 1))
+        plt.plot(
+            tics.flatten("F"),
+            np.tile([100, 105, 100], (1, n_datasets)).flatten(),
+            linewidth=2,
+            color="black",
+        )
+        tics = np.tile(
+            (np.array(range(0, n_datasets - 1)) / (n_datasets - 1))
+            + 0.5 / (n_datasets - 1),
+            (3, 1),
+        )
+        plt.plot(
+            tics.flatten("F"),
+            np.tile([100, 102.5, 100], (1, n_datasets - 1)).flatten(),
+            linewidth=1,
+            color="black",
+        )
+        plt.plot(
+            [
+                0,
+                0,
+                0,
+                cd / (n_datasets - 1),
+                cd / (n_datasets - 1),
+                cd / (n_datasets - 1),
+            ],
+            [127, 123, 125, 125, 123, 127],
+            linewidth=1,
+            color="black",
+        )
+        plt.text(
+            0.5 * cd / (n_datasets - 1),
+            130,
+            "CD",
+            fontsize=12,
+            horizontalalignment="center",
+        )
 
-    #     cd = qalpha[n_datasets - 1] * np.sqrt(
-    #         n_datasets * (n_datasets + 1) / (6 * n_methods)
-    #     )
+        for i in range(n_datasets):
+            plt.text(
+                i / (n_datasets - 1),
+                110,
+                str(n_datasets - i),
+                fontsize=12,
+                horizontalalignment="center",
+            )
 
-    #     # set up plot
-    #     fig, ax = plt.subplots(1)
-    #     ax.set_xlim(-0.5, 1.5)
-    #     ax.set_ylim(0, 140)
-    #     ax.set_axis_off()
+        # compute average rankss
+        # print(r)
+        r = np.mean(r, axis=0)
+        idx = np.argsort(r, axis=0)
+        r = np.sort(r, axis=0)
+        # print(r)
 
-    #     tics = np.tile(np.array(np.arange(n_datasets)) / (n_datasets - 1), (3, 1))
-    #     plt.plot(
-    #         tics.flatten("F"),
-    #         np.tile([100, 105, 100], (1, n_datasets)).flatten(),
-    #         linewidth=2,
-    #         color="black",
-    #     )
-    #     tics = np.tile(
-    #         (np.array(range(0, n_datasets - 1)) / (n_datasets - 1))
-    #         + 0.5 / (n_datasets - 1),
-    #         (3, 1),
-    #     )
-    #     plt.plot(
-    #         tics.flatten("F"),
-    #         np.tile([100, 102.5, 100], (1, n_datasets - 1)).flatten(),
-    #         linewidth=1,
-    #         color="black",
-    #     )
-    #     plt.plot(
-    #         [
-    #             0,
-    #             0,
-    #             0,
-    #             cd / (n_datasets - 1),
-    #             cd / (n_datasets - 1),
-    #             cd / (n_datasets - 1),
-    #         ],
-    #         [127, 123, 125, 125, 123, 127],
-    #         linewidth=1,
-    #         color="black",
-    #     )
-    #     plt.text(
-    #         0.5 * cd / (n_datasets - 1),
-    #         130,
-    #         "CD",
-    #         fontsize=12,
-    #         horizontalalignment="center",
-    #     )
+        # compute statistically similar cliques
+        clique = np.tile(r, (n_datasets, 1)) - np.tile(
+            np.vstack(r.T), (1, n_datasets)
+        )
+        clique[clique < 0] = np.inf
+        clique = clique < cd
 
-    #     for i in range(n_datasets):
-    #         plt.text(
-    #             i / (n_datasets - 1),
-    #             110,
-    #             str(n_datasets - i),
-    #             fontsize=12,
-    #             horizontalalignment="center",
-    #         )
+        for i in range(n_datasets - 1, 0, -1):
+            if np.all(clique[i - 1, clique[i, :]] == clique[i, clique[i, :]]):
+                clique[i, :] = 0
 
-    #     # compute average rankss
-    #     # print(r)
-    #     r = np.mean(r, axis=0)
-    #     idx = np.argsort(r, axis=0)
-    #     r = np.sort(r, axis=0)
-    #     # print(r)
+        n = np.sum(clique, 1)
+        clique = clique[n > 1, :]
+        n = np.size(clique, 0)
 
-    #     # compute statistically similar cliques
-    #     clique = np.tile(r, (n_datasets, 1)) - np.tile(
-    #         np.vstack(r.T), (1, n_datasets)
-    #     )
-    #     clique[clique < 0] = np.inf
-    #     clique = clique < cd
+        for i in range(int(np.ceil(n_datasets / 2))):
+            plt.plot(
+                [
+                    (n_datasets - r[i]) / (n_datasets - 1),
+                    (n_datasets - r[i]) / (n_datasets - 1),
+                    1.2,
+                ],
+                [
+                    100,
+                    100 - 5 * (n + 1) - 10 * (i + 1),
+                    100 - 5 * (n + 1) - 10 * (i + 1),
+                ],
+                color="black",
+            )
+            plt.text(
+                1.2,
+                100 - 5 * (n + 1) - 10 * (i + 1) + 2,
+                "%.2f" % r[i],
+                fontsize=10,
+                horizontalalignment="right",
+            )
+            plt.text(
+                1.25,
+                100 - 5 * (n + 1) - 10 * (i + 1),
+                labels[idx[i]],
+                fontsize=12,
+                verticalalignment="center",
+                horizontalalignment="left",
+            )
 
-    #     for i in range(n_datasets - 1, 0, -1):
-    #         if np.all(clique[i - 1, clique[i, :]] == clique[i, clique[i, :]]):
-    #             clique[i, :] = 0
+        # labels displayed on the left
+        for i in range(int(np.ceil(n_datasets / 2)), n_datasets):
+            plt.plot(
+                [
+                    (n_datasets - r[i]) / (n_datasets - 1),
+                    (n_datasets - r[i]) / (n_datasets - 1),
+                    -0.2,
+                ],
+                [
+                    100,
+                    100 - 5 * (n + 1) - 10 * (n_datasets - i),
+                    100 - 5 * (n + 1) - 10 * (n_datasets - i),
+                ],
+                color="black",
+            )
+            plt.text(
+                -0.2,
+                100 - 5 * (n + 1) - 10 * (n_datasets - i) + 2,
+                "%.2f" % r[i],
+                fontsize=10,
+                horizontalalignment="left",
+            )
+            plt.text(
+                -0.25,
+                100 - 5 * (n + 1) - 10 * (n_datasets - i),
+                labels[idx[i]],
+                fontsize=12,
+                verticalalignment="center",
+                horizontalalignment="right",
+            )
 
-    #     n = np.sum(clique, 1)
-    #     clique = clique[n > 1, :]
-    #     n = np.size(clique, 0)
+        # group cliques of statistically similar classifiers
+        for i in range(np.size(clique, 0)):
+            R = r[clique[i, :]]
+            plt.plot(
+                [
+                    ((n_datasets - np.min(R)) / (n_datasets - 1)) + 0.015,
+                    ((n_datasets - np.max(R)) / (n_datasets - 1)) - 0.015,
+                ],
+                [100 - 5 * (i + 1), 100 - 5 * (i + 1)],
+                linewidth=6,
+                color="black",
+            )
 
-    #     for i in range(int(np.ceil(n_datasets / 2))):
-    #         plt.plot(
-    #             [
-    #                 (n_datasets - r[i]) / (n_datasets - 1),
-    #                 (n_datasets - r[i]) / (n_datasets - 1),
-    #                 1.2,
-    #             ],
-    #             [
-    #                 100,
-    #                 100 - 5 * (n + 1) - 10 * (i + 1),
-    #                 100 - 5 * (n + 1) - 10 * (i + 1),
-    #             ],
-    #             color="black",
-    #         )
-    #         plt.text(
-    #             1.2,
-    #             100 - 5 * (n + 1) - 10 * (i + 1) + 2,
-    #             "%.2f" % r[i],
-    #             fontsize=10,
-    #             horizontalalignment="right",
-    #         )
-    #         plt.text(
-    #             1.25,
-    #             100 - 5 * (n + 1) - 10 * (i + 1),
-    #             labels[idx[i]],
-    #             fontsize=12,
-    #             verticalalignment="center",
-    #             horizontalalignment="left",
-    #         )
+        fig.dpi = 600
 
-    #     # labels displayed on the left
-    #     for i in range(int(np.ceil(n_datasets / 2)), n_datasets):
-    #         plt.plot(
-    #             [
-    #                 (n_datasets - r[i]) / (n_datasets - 1),
-    #                 (n_datasets - r[i]) / (n_datasets - 1),
-    #                 -0.2,
-    #             ],
-    #             [
-    #                 100,
-    #                 100 - 5 * (n + 1) - 10 * (n_datasets - i),
-    #                 100 - 5 * (n + 1) - 10 * (n_datasets - i),
-    #             ],
-    #             color="black",
-    #         )
-    #         plt.text(
-    #             -0.2,
-    #             100 - 5 * (n + 1) - 10 * (n_datasets - i) + 2,
-    #             "%.2f" % r[i],
-    #             fontsize=10,
-    #             horizontalalignment="left",
-    #         )
-    #         plt.text(
-    #             -0.25,
-    #             100 - 5 * (n + 1) - 10 * (n_datasets - i),
-    #             labels[idx[i]],
-    #             fontsize=12,
-    #             verticalalignment="center",
-    #             horizontalalignment="right",
-    #         )
+        if not save_file is None:
+            fig.savefig(save_file, pad_inches = 0, bbox_inches='tight')
 
-    #     # group cliques of statistically similar classifiers
-    #     for i in range(np.size(clique, 0)):
-    #         R = r[clique[i, :]]
-    #         plt.plot(
-    #             [
-    #                 ((n_datasets - np.min(R)) / (n_datasets - 1)) + 0.015,
-    #                 ((n_datasets - np.max(R)) / (n_datasets - 1)) - 0.015,
-    #             ],
-    #             [100 - 5 * (i + 1), 100 - 5 * (i + 1)],
-    #             linewidth=6,
-    #             color="black",
-    #         )
-
-    #     fig.dpi = 600
-
-    #     if not save_file is None:
-    #         fig.savefig(save_file, pad_inches = 0, bbox_inches='tight')
-
-    #     plt.show()
-    #     return fig, ax
+        plt.show()
+        return fig, ax
     
 
     # def cd(self, metric_name, data=None, alpha=0.1, clique=None, fig_name="cdd"):
