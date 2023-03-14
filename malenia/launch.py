@@ -68,12 +68,6 @@ class Launcher:
                     method_path = self._dump_in_condor_tmp_path(method_name, method)
                     results_filename = "seed_" + str(seed)
                     results_path = os.path.join(self.results_path, method_name_global, method_name_specif, dataset.name, results_filename)
-                    # print(results_path)
-                    # print(results_path + "_train.csv")
-                    # print(os.path.exists(results_path + "_train.csv"))
-                    # print(results_path + "_test.csv")
-                    # print(os.path.exists(results_path + "_test.csv"))
-                    # exit()
                     if (
                         os.path.exists(results_path + "_test.csv")
                         and (os.path.exists(results_path + "_train.csv") or not predict_on_train)
