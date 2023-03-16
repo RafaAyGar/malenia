@@ -1,4 +1,5 @@
 
+import malenia
 from malenia.results import Results
 from malenia.results_utils import Metric
 from sklearn.metrics import accuracy_score
@@ -22,7 +23,7 @@ correct_results_by_method = {
 }
 
 ##
-RESULTS_PATH = "./test_results"
+RESULTS_PATH = malenia.__path__[0] + "/test_results"
 DATA = [
     "data_A_dim_0",
     "data_A_dim_1",
@@ -57,7 +58,7 @@ def test_results_by_dataset():
 def test_results_by_method():
     results_by_method = r.get_results_by_method()
     for method in METHODS.keys():
-        obtained = round(results_by_method.loc[method, 'ccr'], 8)
+        obtained = round(results_by_method.loc[method, "ccr"], 8)
         correct = round(correct_results_by_method[method], 8)
         assert(obtained == correct)
 
