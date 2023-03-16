@@ -80,8 +80,6 @@ class Results:
                         self.results[metric_name] = []
                     self.results[metric_name].append(self._get_metric_results(metric, results_path))
         self.results = pd.DataFrame(self.results)
-        print("Results:")
-        print(self.results)
         self.results_by_method_dataset = self.results.groupby(["dataset", "method"]).mean()
         self.results_by_method_dataset = self.results_by_method_dataset.drop(columns = ["seed"])
         self.results_by_method_dataset = self.results_by_method_dataset.reset_index()
@@ -120,6 +118,7 @@ class Results:
         self.results_by_method = self.results_by_method.drop(columns = ["seed"])
         self.results_by_method = self.results_by_method.sort_values(by = list(self.metrics.keys()), ascending = False)
         self.results_by_method = self.results_by_method.reset_index()
+        self.results_by_method.set_index("method", inplace = True)
         return self.results_by_method
     
     def get_results_by_dataset_metric(self, metric):
