@@ -62,12 +62,16 @@ class Results:
         return metric.compute(y_true, y_pred)
 
 
-    def evaluate(self):
+    def evaluate(self, group_separated_dims = True):
         for method_pretty, method_real in self.methods.items():
             for dataset, seed, results_path in self._method_results_info_generator(method_real, "test"):
+                if "MULTI" in method_pretty and "dim" in dataset:
+                    continue
                 if os.path.exists(results_path) == False:
                     print("* WARNING: results file not found: ", results_path)
                     continue
+                if group_separated_dims:
+                    dataset = dataset.split("_dim")[0]
                 self.results["dataset"].append(dataset)
                 self.results["method"].append(method_pretty)
                 self.results["seed"].append(seed)
@@ -76,9 +80,39 @@ class Results:
                         self.results[metric_name] = []
                     self.results[metric_name].append(self._get_metric_results(metric, results_path))
         self.results = pd.DataFrame(self.results)
+        print("Results:")
+        print(self.results)
         self.results_by_method_dataset = self.results.groupby(["dataset", "method"]).mean()
         self.results_by_method_dataset = self.results_by_method_dataset.drop(columns = ["seed"])
         self.results_by_method_dataset = self.results_by_method_dataset.reset_index()
+
+
+    def get_wins_ties_losses(self, metric_name):
+        win_tie_losses = pd.DataFrame()
+        results_by_method = self.get_results_by_method()
+        for strat1 in results_by_method['method']:
+            col = "VS " + strat1
+            s1 = results_by_method[results_by_method['method']==strat1][metric_name].values
+            win_losses = []
+            for strat2 in results_by_method['method']:
+                if strat1 == strat2:
+                    win_losses.append("---")
+                    continue
+                s2 = results_by_method[results_by_method['method']==strat2][metric_name].values
+                w = 0
+                l = 0
+                t = 0
+                for r1, r2 in zip(s1, s2):
+                    if r1 > r2:
+                        w += 1
+                    elif r1 < r2:
+                        l += 1
+                    else:
+                        t += 1
+                wlt_string = str(w) + "W | " + str(l) + "L | " + str(t) + "T"
+                win_losses.append(wlt_string)
+            win_tie_losses[col] = win_losses
+        return win_tie_losses
 
 
     def get_results_by_method(self):
@@ -220,7 +254,7 @@ class Results:
     #     # all done...
     #     return cd,f
 
-    def get_CDD(self, metric_name=None, alpha=0.1, data="default", save_file=None):
+    def plot_CDD(self, metric_name=None, alpha=0.1, data="default", save_file=None):
         """Plot critical difference diagrams.
 
         References
@@ -460,6 +494,23 @@ class Results:
 
         plt.show()
         return fig, ax
+
+    def plot_Boxplot(self, metric_name, figsize=(16, 8)):
+        plt.style.use("seaborn")
+        plt.rcParams["figure.figsize"] = figsize
+        plt.rcParams["figure.autolayout"] = True
+
+        title_font = {'color':'black', 'weight':'bold',
+                    'verticalalignment':'bottom'}
+
+        metric_results_by_dataset = self.get_results_by_dataset_metric(metric_name)
+        metric_results_by_dataset.plot(kind='box', title= "Comparison in terms of " + metric_name + " metric")
+        # for label in (ax.get_xticklabels() + ax.get_yticklabels()):
+        #     # label.set_fontname('Arial')
+        #     # label.set_fontsize(20)
+        plt.title("Comparison in terms of " + metric_name, **title_font)
+        plt.ylim(0.0, metric_results_by_dataset.to_numpy().max() + 0.5)
+        plt.show()
     
 
     # def cd(self, metric_name, data=None, alpha=0.1, clique=None, fig_name="cdd"):
