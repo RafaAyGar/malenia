@@ -12,13 +12,15 @@ class Results:
         methods,
         metrics,
         results_path,
-        seeds = 30
+        seeds = 30,
+        rounding_decimals = 4
     ):
         self.datasets = datasets
         self.methods = methods
         self.metrics = metrics
         self.results_path = results_path
         self.seeds = seeds
+        self.rounding_decimals = rounding_decimals
 
         self.results = {
             "dataset" : [],
@@ -63,9 +65,12 @@ class Results:
 
 
     def evaluate(self, group_separated_dims = True):
-        for method_pretty, method_real in self.methods.items():
+        self.methods_real_names = []
+        for method_pretty, method_info in self.methods.items():
+            method_real, isMultivariate = method_info
+            self.methods_real_names.append(method_real)
             for dataset, seed, results_path in self._method_results_info_generator(method_real, "test"):
-                if "MULTI" in method_pretty and "dim" in dataset:
+                if isMultivariate and "dim" in dataset:
                     continue
                 if os.path.exists(results_path) == False:
                     print("* WARNING: results file not found: ", results_path)
@@ -80,9 +85,11 @@ class Results:
                         self.results[metric_name] = []
                     self.results[metric_name].append(self._get_metric_results(metric, results_path))
         self.results = pd.DataFrame(self.results)
+        self.results = self.results.round(self.rounding_decimals)
         self.results_by_method_dataset = self.results.groupby(["dataset", "method"]).mean()
         self.results_by_method_dataset = self.results_by_method_dataset.drop(columns = ["seed"])
         self.results_by_method_dataset = self.results_by_method_dataset.reset_index()
+        self.results_by_method_dataset = self.results_by_method_dataset.round(self.rounding_decimals)
 
 
     def get_wins_ties_losses(self, metric_name):
@@ -114,28 +121,30 @@ class Results:
 
 
     def get_results_by_method(self):
-        self.results_by_method = self.results.groupby(["method"]).mean()
-        self.results_by_method = self.results_by_method.drop(columns = ["seed"])
+        self.results_by_method = self.results_by_method_dataset.groupby(["method"]).mean()
         self.results_by_method = self.results_by_method.sort_values(by = list(self.metrics.keys()), ascending = False)
         self.results_by_method = self.results_by_method.reset_index()
         self.results_by_method.set_index("method", inplace = True)
+        self.results_by_method = self.results_by_method.round(self.rounding_decimals)
         return self.results_by_method
     
+
     def get_results_by_dataset_metric(self, metric):
         df = self.results_by_method_dataset.sort_values(["dataset", "method"])
-        rocket_fullMAE = df[df['method'] == list(self.methods.values())[0]].copy()
+        results_by_methods_dataset_metric = df[df['method'] == self.methods_real_names[0]].copy()
         for pretty_method_name in self.methods.keys():
             method_results = list(df[df['method'] == pretty_method_name][metric])
-            rocket_fullMAE[pretty_method_name] = method_results
-            rocket_fullMAE[pretty_method_name].round(4)
-            rocket_fullMAE['dataset'] = df['dataset'].unique()
-        final_rocket_fullMAE = rocket_fullMAE[
+            results_by_methods_dataset_metric[pretty_method_name] = method_results
+            results_by_methods_dataset_metric[pretty_method_name].round(2)
+            results_by_methods_dataset_metric['dataset'] = df['dataset'].unique()
+        final_results_by_methods_dataset_metric = results_by_methods_dataset_metric[
             ["dataset"] + list(self.methods.keys())
         ].copy()
-        final_rocket_fullMAE = final_rocket_fullMAE.reset_index(drop=True)
-        final_rocket_fullMAE.sort_values(by=["dataset"])
-        final_rocket_fullMAE.set_index("dataset", inplace=True)
-        return final_rocket_fullMAE  
+        final_results_by_methods_dataset_metric = final_results_by_methods_dataset_metric.reset_index(drop=True)
+        final_results_by_methods_dataset_metric.sort_values(by=["dataset"])
+        final_results_by_methods_dataset_metric.set_index("dataset", inplace=True)
+        final_results_by_methods_dataset_metric = final_results_by_methods_dataset_metric.round(self.rounding_decimals)
+        return final_results_by_methods_dataset_metric  
 
 
     

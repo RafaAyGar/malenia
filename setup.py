@@ -11,4 +11,11 @@ setup(
     author_email='rafaaylloningeniero@gmail.com',
 
     py_modules=['malenia'],
+
+    entry_points = {
+        'console_scripts': [
+            'malenia_check_condor_errors = malenia:check_condor_errors',
+            'malenia_test = malenia:test',
+        ],            
+    },
 )

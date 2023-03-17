@@ -1,0 +1,3 @@
+[console_scripts]
+malenia_check_condor_errors = malenia:check_condor_errors
+malenia_test = malenia:test
