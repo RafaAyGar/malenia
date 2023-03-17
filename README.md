@@ -8,11 +8,7 @@ Check if there is any error in your condor_output .err files.
 - In an integrated terminal, with the malenia package installed in your python environnement, run:
 
 ```bash
-python
-```
-```python
-import malenia
-malenia.check_condor_errors("path_to_condor_output")
+malenia_check_condor_errors
 ```
 
 #### Testing with pytest:
@@ -20,9 +16,5 @@ Check that the malenia package functionalities work properly (currently only sup
 - In an integrated terminal, with the malenia package installed in your python environnement, run:
 
 ```bash
-python
-```
-```python
-import malenia
-malenia.test()
+malenia_test
 ```
