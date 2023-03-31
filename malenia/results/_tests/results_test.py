@@ -23,7 +23,7 @@ correct_results_by_method = {
 }
 
 ##
-RESULTS_PATH = malenia.__path__[0] + "/test_results"
+RESULTS_PATH = malenia.__path__[0] + "/test_data"
 DATA = [
     "data_A_dim_0",
     "data_A_dim_1",

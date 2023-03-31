@@ -11,6 +11,7 @@ class Launcher:
         datasets,
         cv,
         results_path,
+        condor_files_path="condor_files",
         seeds = 30,
         submission_params=None,
     ):
@@ -21,7 +22,7 @@ class Launcher:
         self.seeds = seeds
         self.submission_params = submission_params
 
-        self.condor_files_path = "condor_files/"
+        self.condor_files_path = condor_files_path
         self.condor_tmp_path = os.path.join(self.condor_files_path, "tmp")
 
         # remove all files and folders from self.condor_files_path if they exist
@@ -42,12 +43,19 @@ class Launcher:
     
     def _extract_global_and_specific_method_name(self, method_name):
         method_name_global = method_name.split("_")[0]
-        method_name_specif = ""
-        for part in method_name.split("_")[1:]:
-            method_name_specif += part + "_"
-        method_name_specif = method_name_specif[:-1] # remove last "_"
+        method_full_name = method_name.split("_seed")[0]
 
-        return method_name_global, method_name_specif
+        if method_name_global == method_full_name: # if the specific method name is not specified
+            method_name_specific = "Default"
+            seed = method_name.split("_seed")[1]
+        else:
+            method_name_specif_with_seed = ""
+            for part in method_name.split("_")[1:]:
+                method_name_specif_with_seed += part + "_"
+            method_name_specific = method_name_specif_with_seed.split("_seed")[0]
+            seed = method_name_specif_with_seed.split("_seed")[1][:-1] # [:-1] to remove last "_"
+
+        return method_name_global, method_name_specific, seed
 
     def launch(
         self,
@@ -60,36 +68,33 @@ class Launcher:
         for dataset in self.datasets:
             dataset_path = self._dump_in_condor_tmp_path(dataset.name, dataset)
             for method_name, method in self.methods.items():
-                method_name_global, method_name_specif = self._extract_global_and_specific_method_name(method_name)
-                for seed in range(self.seeds):
-                    if hasattr(method, "random_state"):
-                        method.random_state = seed
-                    cv_path = self._dump_in_condor_tmp_path("cv", self.cv)
-                    method_path = self._dump_in_condor_tmp_path(method_name, method)
-                    results_filename = "seed_" + str(seed)
-                    results_path = os.path.join(self.results_path, method_name_global, method_name_specif, dataset.name, results_filename)
-                    if (
-                        os.path.exists(results_path + "_test.csv")
-                        and (os.path.exists(results_path + "_train.csv") or not predict_on_train)
-                        and overwrite_predictions == False
-                        and overwrite_fitted_methods == False
-                    ):
-                        print(f"SKIPPING - {results_path} already exists")
-                        continue
+                method_name_global, method_name_specif, seed = self._extract_global_and_specific_method_name(method_name)
+                cv_path = self._dump_in_condor_tmp_path("cv", self.cv)
+                method_path = self._dump_in_condor_tmp_path(method_name, method)
+                results_filename = "seed_" + seed
+                results_path = os.path.join(self.results_path, method_name_global, method_name_specif, dataset.name, results_filename)
+                if (
+                    os.path.exists(results_path + "_test.csv")
+                    and (os.path.exists(results_path + "_train.csv") or not predict_on_train)
+                    and overwrite_predictions == False
+                    and overwrite_fitted_methods == False
+                ):
+                    print(f"SKIPPING - {results_path} already exists")
+                    continue
 
-                    params += (
-                        dataset_path + "," +
-                        method_path  + "," +
-                        cv_path      + "," +
-                        str(seed) + "," +
-                        str(overwrite_fitted_methods) + "," +
-                        str(overwrite_predictions) + "," +
-                        str(predict_on_train) + "," +
-                        str(save_fitted_methods) + "," +
-                        str(method_name_global) + "__" + str(method_name_specif) + "__" + str(dataset.name) + "__" + str(seed) + "," +
-                        self.results_path + "," +
-                        dataset.name + "\n"
-                    )
+                params += (
+                    dataset_path + "," +
+                    method_path  + "," +
+                    cv_path      + "," +
+                    seed + "," +
+                    str(overwrite_fitted_methods) + "," +
+                    str(overwrite_predictions) + "," +
+                    str(predict_on_train) + "," +
+                    str(save_fitted_methods) + "," +
+                    str(method_name_global) + "__" + str(method_name_specif) + "__" + str(dataset.name) + "__" + seed + "," +
+                    self.results_path + "," +
+                    dataset.name + "\n"
+                )
 
         with open(self.condor_tmp_path + "/task_params.txt", 'w') as f:
             f.write(params)
