@@ -1,5 +1,5 @@
 # malenia
-#### Machine learning automatization package to ease experiments launching and results extraction
+Enhance your experiment launch and results extraction processes with the advanced machine learning automation package *malenia*. Streamline the entire workflow, making it more efficient and user-friendly for seamless experimentation and effortless result retrieval. Currently the malenia experiments launching module is specialized in condor administrated systems, but we are working to extend its functionalities to any type of launching environnement.
 
 ## Functionalities
 
