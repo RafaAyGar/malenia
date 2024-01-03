@@ -1,11 +1,11 @@
 import random
-import numpy as np
-
-from sklearn.utils.multiclass import class_distribution
 from itertools import zip_longest
+from time import time
+
+import numpy as np
 from aeon.transformations.collection.base import BaseCollectionTransformer
 from sklearn.utils import check_random_state
-from time import time
+from sklearn.utils.multiclass import class_distribution
 
 
 class MyShapeletTransform(BaseCollectionTransformer):
@@ -62,9 +62,7 @@ class MyShapeletTransform(BaseCollectionTransformer):
         ids_by_class = {i: np.where(y == i)[0] for i in self.classes}
         num_instances_per_class = {i: len(ids_by_class[i]) for i in ids_by_class}
 
-        round_robin_case_order = _round_robin(
-            *[list(v) for k, v in ids_by_class.items()]
-        )
+        round_robin_case_order = _round_robin(*[list(v) for k, v in ids_by_class.items()])
         cases_to_visit = [(i, y[i]) for i in round_robin_case_order]
 
         case_idx = 0
@@ -93,17 +91,11 @@ class MyShapeletTransform(BaseCollectionTransformer):
                 start_time = time()
 
                 candidate = standardize(
-                    X[case_series_id][
-                        :, canditate_start_pos : canditate_start_pos + candidate_len
-                    ]
+                    X[case_series_id][:, canditate_start_pos : canditate_start_pos + candidate_len]
                 )
 
-                cases_to_compare = [
-                    case for case in cases_to_visit if case[0] != case_series_id
-                ]
-                cases_to_compare = random.sample(
-                    cases_to_compare, int(len(cases_to_compare) * 0.2)
-                )
+                cases_to_compare = [case for case in cases_to_visit if case[0] != case_series_id]
+                cases_to_compare = random.sample(cases_to_compare, int(len(cases_to_compare) * 0.2))
                 for case_to_compare in cases_to_compare:
                     comparison_series_id = case_to_compare[0]
                     comparison_series_len = len(X[comparison_series_id][0])
@@ -129,18 +121,14 @@ class MyShapeletTransform(BaseCollectionTransformer):
                     orderline = []
 
                     for _ in range(
-                        max(
-                            1, int(np.ceil((comparison_series_len - candidate_len) / 2))
-                        )
+                        max(1, int(np.ceil((comparison_series_len - candidate_len) / 2)))
                     ):
                         # left
                         if start_left < 0:
                             start_left = comparison_series_len - 1 - candidate_len
 
                         comparison = standardize(
-                            X[comparison_series_id][
-                                :, start_left : start_left + candidate_len
-                            ]
+                            X[comparison_series_id][:, start_left : start_left + candidate_len]
                         )
                         dist_left = np.linalg.norm(candidate - comparison)
                         bsf_dist = min(dist_left * dist_left, bsf_dist)
@@ -153,9 +141,7 @@ class MyShapeletTransform(BaseCollectionTransformer):
                         if start_right == comparison_series_len - candidate_len + 1:
                             start_right = 0
                         comparison = standardize(
-                            X[comparison_series_id][
-                                :, start_right : start_right + candidate_len
-                            ]
+                            X[comparison_series_id][:, start_right : start_right + candidate_len]
                         )
                         dist_right = np.linalg.norm(candidate - comparison)
                         bsf_dist = min(dist_right * dist_right, bsf_dist)
@@ -313,20 +299,14 @@ class _Shapelet:
 
     def __str__(self):
         """Print."""
-        return (
-            "Series ID: {0}, start_pos: {1}, length: {2}, info_gain: {3},"
-            " ".format(self.series_id, self.start_pos, self.length, self.info_gain)
+        return "Series ID: {0}, start_pos: {1}, length: {2}, info_gain: {3}," " ".format(
+            self.series_id, self.start_pos, self.length, self.info_gain
         )
 
 
 def _round_robin(*iterables):
     sentinel = object()
-    return (
-        a
-        for x in zip_longest(*iterables, fillvalue=sentinel)
-        for a in x
-        if a != sentinel
-    )
+    return (a for x in zip_longest(*iterables, fillvalue=sentinel) for a in x if a != sentinel)
 
 
 def standardize(a, axis=0, ddof=0):
@@ -371,9 +351,7 @@ def standardize(a, axis=0, ddof=0):
         else:
             mns = j.mean(axis=axis)
             if axis and mns.ndim < j.ndim:
-                zscored[i] = (j - np.expand_dims(mns, axis=axis)) / np.expand_dims(
-                    sstd, axis=axis
-                )
+                zscored[i] = (j - np.expand_dims(mns, axis=axis)) / np.expand_dims(sstd, axis=axis)
             else:
                 zscored[i] = (j - mns) / sstd
     return zscored
@@ -473,9 +451,7 @@ def calc_early_binary_ig(
         # optimistically add this class to left side first and other to
         # right
         left_prop = (split + 1 + num_to_add_this_class) / total_all
-        ent_left = binary_entropy(
-            count_this_class + num_to_add_this_class, count_other_class
-        )
+        ent_left = binary_entropy(count_this_class + num_to_add_this_class, count_other_class)
 
         right_prop = 1 - left_prop  # because right side must
         # optimistically contain everything else
@@ -489,9 +465,7 @@ def calc_early_binary_ig(
 
         # now optimistically add this class to right, other to left
         left_prop = (split + 1 + num_to_add_other_class) / total_all
-        ent_left = binary_entropy(
-            count_this_class, count_other_class + num_to_add_other_class
-        )
+        ent_left = binary_entropy(count_this_class, count_other_class + num_to_add_other_class)
 
         right_prop = 1 - left_prop  # because right side must
         # optimistically contain everything else

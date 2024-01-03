@@ -1,18 +1,19 @@
 import sys
+from logging import StreamHandler, getLogger
+
 import numpy as np
 from pandas import Timestamp
-from logging import StreamHandler, getLogger
-from malenia.save_and_load import save_method, save_predictions
-
 from sktime.benchmarking.data import UEADataset
+from sktime.classification.convolution_based import Arsenal
+from sktime.classification.interval_based._drcif import DrCIF
+from sktime.classification.shapelet_based import ShapeletTransformClassifier
+from sktime.classification_ordinal.kernel_based._arsenal_ordinal import \
+    ArsenalOrdinal
+from sktime.classification_ordinal.shapelet_based import \
+    ShapeletTransformClassifierOrdinal
 from sktime.series_as_features.model_selection import StratifiedCV
 
-from sktime.classification.interval_based._drcif import DrCIF
-from sktime.classification.convolution_based import Arsenal
-from sktime.classification_ordinal.kernel_based._arsenal_ordinal import ArsenalOrdinal
-from sktime.classification.shapelet_based import ShapeletTransformClassifier
-from sktime.classification_ordinal.shapelet_based import ShapeletTransformClassifierOrdinal
-
+from malenia.save_and_load import save_method, save_predictions
 
 console = StreamHandler()
 log = getLogger()
@@ -31,30 +32,30 @@ job_info = str(sys.argv[9])
 results_path = str(sys.argv[10])
 
 ## El código de abajo espera que el path del dataset sea del tipo: "ruta_base/tsoc/dataset_name", ejemplo: "ruta_base/tsoc/AAPL"
-dataset_name = dataset_path.split("/")[-1] 
+dataset_name = dataset_path.split("/")[-1]
 dataset = UEADataset(path=dataset_path, name=dataset_name)
 
 SEEDS = 30
-cv = StratifiedCV(total_folds=SEEDS) # Como no cambia, se declara aquí a pelo y lo hacemos más fácil
+cv = StratifiedCV(
+    total_folds=SEEDS
+)  # Como no cambia, se declara aquí a pelo y lo hacemos más fácil
 
 ## Esto es bastante chustero, pero por ahora nos vale.
 #
 if method == "DrCIF_Default":
-    method = DrCIF(random_state = fold)
+    method = DrCIF(random_state=fold)
 elif method == "Arsenal_Default":
-    method = Arsenal(random_state = fold)
+    method = Arsenal(random_state=fold)
 elif method == "ArsenalOrdinal_Default":
-    method = ArsenalOrdinal(random_state = fold)
+    method = ArsenalOrdinal(random_state=fold)
 elif method == "STC_Default":
-    method = ShapeletTransformClassifier(random_state = fold)
+    method = ShapeletTransformClassifier(random_state=fold)
 elif method == "STCOrdinal_Default":
-    method = ShapeletTransformClassifierOrdinal(random_state = fold)
+    method = ShapeletTransformClassifierOrdinal(random_state=fold)
 
 # Do the work that standard condor.fit_predict() does in every for iteration
 if not hasattr(dataset, "load_crude"):
-    raise ValueError(
-        f"Dataset {dataset.name} must implement a load_crude() method"
-    )
+    raise ValueError(f"Dataset {dataset.name} must implement a load_crude() method")
 X_train, y_train, X_test, y_test = dataset.load_crude()
 
 # Apply stratified resample
@@ -75,11 +76,7 @@ if save_fitted_strategies:
         save_method(method, job_info, results_path)
     except Exception as e:
         log.warning("ERROR SAVING method!")
-        log.warning(
-            f"SAVING method ERROR - "
-            f"Fit - {job_info} - "
-            f"* EXCEPTION: \n{e}"
-        )
+        log.warning(f"SAVING method ERROR - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}")
 
 if predict_on_train:
     predict_estimator_start_time = Timestamp.now()
@@ -91,7 +88,7 @@ if predict_on_train:
     except:
         n_classes = len(np.unique(y_train))
         y_proba = np.zeros((X_train.shape[0], n_classes))
-    
+
     save_predictions(
         y_true=y_train,
         y_pred=y_pred,
@@ -137,15 +134,8 @@ try:
         job_info=job_info,
         results_path=results_path,
     )
-    log.warning(
-        f"Done! - Fit {job_info} saved!"
-    )
+    log.warning(f"Done! - Fit {job_info} saved!")
 except Exception as e:
-    log.warning(
-        f"SAVING PREDICTIONS ERROR - "
-        f"Fit - {job_info} - "
-        f"* EXCEPTION: \n{e}"
-        
-    )
+    log.warning(f"SAVING PREDICTIONS ERROR - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}")
 
 del dataset, method, y_test, y_pred, y_proba

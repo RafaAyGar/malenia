@@ -1,5 +1,7 @@
 import os
+
 import malenia
+
 
 def test():
     ## Results extraction tests

@@ -7,10 +7,9 @@ import math
 import operator
 
 import numpy as np
-from scipy.stats import distributions, find_repeats, rankdata, wilcoxon
-
 from aeon.benchmarking.utils import get_qalpha
 from aeon.utils.validation._dependencies import _check_soft_dependencies
+from scipy.stats import distributions, find_repeats, rankdata, wilcoxon
 
 
 def _check_friedman(n_estimators, n_datasets, ranked_data, alpha):
@@ -66,13 +65,9 @@ def nemenyi_cliques(n_estimators, n_datasets, avranks, alpha):
     # Get critical value, there is an exact way now
     qalpha = get_qalpha(alpha)
     # calculate critical difference with Nemenyi
-    cd = qalpha[n_estimators] * np.sqrt(
-        n_estimators * (n_estimators + 1) / (6 * n_datasets)
-    )
+    cd = qalpha[n_estimators] * np.sqrt(n_estimators * (n_estimators + 1) / (6 * n_datasets))
     # compute statistically similar cliques
-    cliques = np.tile(avranks, (n_estimators, 1)) - np.tile(
-        np.vstack(avranks.T), (1, n_estimators)
-    )
+    cliques = np.tile(avranks, (n_estimators, 1)) - np.tile(np.vstack(avranks.T), (1, n_estimators))
     cliques[cliques < 0] = np.inf
     cliques = cliques < cd
 
@@ -258,10 +253,7 @@ def plot_critical_difference_dguijo(
 
     # sort out colours for labels
     if highlight is not None:
-        colours = [
-            highlight[label] if label in highlight else "#000000"
-            for label in temp_labels
-        ]
+        colours = [highlight[label] if label in highlight else "#000000" for label in temp_labels]
     else:
         colours = ["#000000"] * len(temp_labels)
 
@@ -273,14 +265,10 @@ def plot_critical_difference_dguijo(
             if clique_method == "nemenyi":
                 cliques = nemenyi_cliques(n_estimators, n_datasets, avranks, alpha)
             elif clique_method == "holm":
-                cliques = wilcoxon_holm_cliques(
-                    scores, labels, ranked_data.mean(axis=0), alpha
-                )
+                cliques = wilcoxon_holm_cliques(scores, labels, ranked_data.mean(axis=0), alpha)
                 print(cliques)
             else:
-                raise ValueError(
-                    "clique methods available are only nemenyi, bonferroni and holm."
-                )
+                raise ValueError("clique methods available are only nemenyi, bonferroni and holm.")
     # If Friedman test is not significant everything has to be one clique
     else:
         if cliques is None:

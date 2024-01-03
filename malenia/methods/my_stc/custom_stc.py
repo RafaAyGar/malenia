@@ -3,15 +3,14 @@ from aeon.base._base import _clone_estimator
 from aeon.classification.shapelet_based import ShapeletTransformClassifier
 from aeon.classification.sklearn import RotationForestClassifier
 from aeon.utils.validation.panel import check_X_y
-from malenia.methods._base_saver_transformer import BaseSaveLoadTransformation
-from malenia.methods.my_stc.custom_rst import CustomRandomShapeletTransform
 from sklearn.model_selection import cross_val_predict
 from sklearn.pipeline import Pipeline
 
+from malenia.methods._base_saver_transformer import BaseSaveLoadTransformation
+from malenia.methods.my_stc.custom_rst import CustomRandomShapeletTransform
 
-class CustomShapeletTransformClassifier(
-    ShapeletTransformClassifier, BaseSaveLoadTransformation
-):
+
+class CustomShapeletTransformClassifier(ShapeletTransformClassifier, BaseSaveLoadTransformation):
     def __init__(
         self,
         shapelet_quality_measure,
@@ -147,9 +146,7 @@ class CustomShapeletTransformClassifier(
         if not self.save_transformed_data:
             raise ValueError("Currently only works with saved transform data from fit.")
 
-        if (isinstance(self.estimator, RotationForestClassifier)) or (
-            self.estimator is None
-        ):
+        if (isinstance(self.estimator, RotationForestClassifier)) or (self.estimator is None):
             return self._estimator._get_train_probs(self.transformed_data_, y)
         else:
             m = getattr(self._estimator, "predict_proba", None)
@@ -166,7 +163,8 @@ class CustomShapeletTransformClassifier(
                 if "gridsearchcv" in self.estimator.named_steps.keys():
                     # Use best estimator from trained gridsearchcv
                     estimator = _clone_estimator(
-                        self._estimator["gridsearchcv"].best_estimator_, self.random_state
+                        self._estimator["gridsearchcv"].best_estimator_,
+                        self.random_state,
                     )
                     print("Using best estimator from gridsearchcv in oob probas.")
                 else:

@@ -3,17 +3,16 @@ import math
 import time
 
 import numpy as np
-from joblib import Parallel, delayed
-from numba import njit
-from numba.typed.typedlist import List
-from sklearn import preprocessing
-from sklearn.utils._random import check_random_state
-from sklearn.metrics import r2_score
-
 from aeon.transformations.collection.base import BaseCollectionTransformer
 from aeon.utils.numba.general import z_normalise_series
 from aeon.utils.validation import check_n_jobs
+from joblib import Parallel, delayed
+from numba import njit
+from numba.typed.typedlist import List
 from scipy.stats import linregress
+from sklearn import preprocessing
+from sklearn.metrics import r2_score
+from sklearn.utils._random import check_random_state
 
 
 class MyRandomShapeletTransformDebug(BaseCollectionTransformer):
@@ -117,9 +116,7 @@ class MyRandomShapeletTransformDebug(BaseCollectionTransformer):
         if max_shapelets_per_class < 1:
             max_shapelets_per_class = 1
         # shapelet list content: quality, length, position, channel, inst_idx, cls_idx
-        shapelets = list(
-            [list([(-1.0, -1, -1, -1, -1, -1)]) for _ in range(self.n_classes_)]
-        )
+        shapelets = list([list([(-1.0, -1, -1, -1, -1, -1)]) for _ in range(self.n_classes_)])
         n_shapelets_extracted = 0
 
         rng = check_random_state(self.random_state)
@@ -165,8 +162,7 @@ class MyRandomShapeletTransformDebug(BaseCollectionTransformer):
             while n_shapelets_extracted < self.n_shapelet_samples:
                 n_shapelets_to_extract = (
                     self._batch_size
-                    if n_shapelets_extracted + self._batch_size
-                    <= self.n_shapelet_samples
+                    if n_shapelets_extracted + self._batch_size <= self.n_shapelet_samples
                     else self.n_shapelet_samples - n_shapelets_extracted
                 )
 
@@ -241,9 +237,7 @@ class MyRandomShapeletTransformDebug(BaseCollectionTransformer):
         ### Ordena los shapelets por: 1º->calidad, 2º->menos la longitud, 3º->posición, 4º->canal, 5º->instancia.
         ##
         #
-        self.shapelets.sort(
-            reverse=True, key=lambda s: (abs(s[0]), -s[1], s[2], s[3], s[4])
-        )
+        self.shapelets.sort(reverse=True, key=lambda s: (abs(s[0]), -s[1], s[2], s[3], s[4]))
 
         to_keep = self._remove_identical_shapelets(list(self.shapelets))
         self.shapelets = [n for (n, b) in zip(self.shapelets, to_keep) if b]
@@ -252,9 +246,7 @@ class MyRandomShapeletTransformDebug(BaseCollectionTransformer):
         for s in self.shapelets:
             sabs = np.abs(s[6])
             self._sorted_indicies.append(
-                np.array(
-                    sorted(range(s[1]), reverse=True, key=lambda j, sabs=sabs: sabs[j])
-                )
+                np.array(sorted(range(s[1]), reverse=True, key=lambda j, sabs=sabs: sabs[j]))
             )
         # find max shapelet length
         self.max_shapelet_length_ = max(self.shapelets, key=lambda x: x[1])[1]
@@ -285,9 +277,7 @@ class MyRandomShapeletTransformDebug(BaseCollectionTransformer):
                 )
 
         for i, series in enumerate(X):
-            dists = Parallel(
-                n_jobs=self._n_jobs, backend=self.parallel_backend, prefer="threads"
-            )(
+            dists = Parallel(n_jobs=self._n_jobs, backend=self.parallel_backend, prefer="threads")(
                 delayed(_online_shapelet_distance)(
                     series[shapelet[3]],
                     shapelet[6],
@@ -325,15 +315,11 @@ class MyRandomShapeletTransformDebug(BaseCollectionTransformer):
         else:
             return {"max_shapelets": 5, "n_shapelet_samples": 50, "batch_size": 20}
 
-    def _extract_random_shapelet(
-        self, X, y, i, shapelets, max_shapelets_per_class, rng
-    ):
+    def _extract_random_shapelet(self, X, y, i, shapelets, max_shapelets_per_class, rng):
         inst_idx = i % self.n_instances_
         cls_idx = int(y[inst_idx])
         worst_quality = (
-            shapelets[cls_idx][0][0]
-            if len(shapelets[cls_idx]) == max_shapelets_per_class
-            else -1
+            shapelets[cls_idx][0][0] if len(shapelets[cls_idx]) == max_shapelets_per_class else -1
         )
 
         length = (
@@ -343,13 +329,9 @@ class MyRandomShapeletTransformDebug(BaseCollectionTransformer):
         position = rng.randint(0, self.min_series_length_ - length)
         channel = rng.randint(0, self.n_channels_)
 
-        shapelet = z_normalise_series(
-            X[inst_idx][channel][position : position + length]
-        )
+        shapelet = z_normalise_series(X[inst_idx][channel][position : position + length])
         sabs = np.abs(shapelet)
-        sorted_indicies = np.array(
-            sorted(range(length), reverse=True, key=lambda j: sabs[j])
-        )
+        sorted_indicies = np.array(sorted(range(length), reverse=True, key=lambda j: sabs[j]))
 
         quality = self._find_shapelet_quality(
             X,
@@ -431,9 +413,7 @@ class MyRandomShapeletTransformDebug(BaseCollectionTransformer):
 
     @staticmethod
     # @njit(fastmath=True, cache=True)
-    def _merge_shapelets(
-        shapelet_heap, candidate_shapelets, max_shapelets_per_class, cls_idx
-    ):
+    def _merge_shapelets(shapelet_heap, candidate_shapelets, max_shapelets_per_class, cls_idx):
         for shapelet in candidate_shapelets:
             if shapelet[5] == cls_idx and shapelet[0] > 0:
                 if (

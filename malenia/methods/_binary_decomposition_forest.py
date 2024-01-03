@@ -37,9 +37,7 @@ class OBDForest(BaseEstimator, ClassifierMixin):
     def predict_proba(self, X, y=None):
         pred_cumprobas_bd = np.ones((X.shape[0], self.n_classes_))
         for r in range(1, self.n_classes_):
-            pred_cumprobas_bd[:, r] = self.trained_binary_estimators[
-                r - 1
-            ].predict_proba(X)[:, 1]
+            pred_cumprobas_bd[:, r] = self.trained_binary_estimators[r - 1].predict_proba(X)[:, 1]
 
         final_probas = np.zeros((X.shape[0], self.n_classes_))
         for r in range(0, self.n_classes_ - 1):

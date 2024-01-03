@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import confusion_matrix
 
+
 ## Class to declare metrics to be used in the evaluation of the results
 #
 class Metric:
@@ -22,7 +23,7 @@ def accuracy_off1(y_true, y_pred):
 
     conf_mat = confusion_matrix(y_true, y_pred)
     n = conf_mat.shape[0]
-    mask = np.eye(n, n) + np.eye(n, n, k=1), + np.eye(n, n, k=-1)
+    mask = np.eye(n, n) + np.eye(n, n, k=1), +np.eye(n, n, k=-1)
     correct = mask * conf_mat
 
     return 1.0 * np.sum(correct) / np.sum(conf_mat)

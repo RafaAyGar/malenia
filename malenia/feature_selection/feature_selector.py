@@ -1,21 +1,20 @@
-from malenia.feature_selection import get_feature_importance
 from sklearn.base import BaseEstimator, TransformerMixin
 
+from malenia.feature_selection import get_feature_importance
 
 
 class FeatureSelector(BaseEstimator, TransformerMixin):
     def __init__(
         self,
         # y,
-        features_pct = 0.1,
-        by = "global_and_class"
+        features_pct=0.1,
+        by="global_and_class",
     ):
         # self.y = y
         self.features_pct = features_pct
         self.by = by
 
     def fit(self, X, y=None):
-        
         if y is None:
             raise ValueError("y must be provided for feature selection")
 
@@ -25,7 +24,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
         self.final_fis = dict()
         if self.by == "global_and_class":
             for feature in fi_global.keys():
-                fi = ( fi_global[feature] + fi_byClass[feature] ) / 2
+                fi = (fi_global[feature] + fi_byClass[feature]) / 2
                 self.final_fis[feature] = fi
 
         self.final_fis = sorted(self.final_fis.items(), key=lambda x: x[1], reverse=False)
@@ -33,7 +32,6 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        
         best_features = []
 
         n_features = int(len(self.final_fis) * self.features_pct)

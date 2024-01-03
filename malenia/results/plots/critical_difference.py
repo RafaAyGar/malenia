@@ -5,11 +5,11 @@ __author__ = ["SveaMeyer13", "dguijo"]
 
 import math
 import operator
+
 import numpy as np
-
 from scipy.stats import distributions, find_repeats, rankdata, wilcoxon
-from malenia.results.plots.cdd_aux import get_qalpha
 
+from malenia.results.plots.cdd_aux import get_qalpha
 
 
 def _check_friedman(n_estimators, n_datasets, ranked_data, alpha):
@@ -65,13 +65,9 @@ def nemenyi_cliques(n_estimators, n_datasets, avranks, alpha):
     # Get critical value, there is an exact way now
     qalpha = get_qalpha(alpha)
     # calculate critical difference with Nemenyi
-    cd = qalpha[n_estimators] * np.sqrt(
-        n_estimators * (n_estimators + 1) / (6 * n_datasets)
-    )
+    cd = qalpha[n_estimators] * np.sqrt(n_estimators * (n_estimators + 1) / (6 * n_datasets))
     # compute statistically similar cliques
-    cliques = np.tile(avranks, (n_estimators, 1)) - np.tile(
-        np.vstack(avranks.T), (1, n_estimators)
-    )
+    cliques = np.tile(avranks, (n_estimators, 1)) - np.tile(np.vstack(avranks.T), (1, n_estimators))
     cliques[cliques < 0] = np.inf
     cliques = cliques < cd
     for i in range(n_estimators - 1, 0, -1):
@@ -88,13 +84,9 @@ def bonferroni_cliques(n_estimators, n_datasets, avranks, alpha):
     # Get critical value, there is an exact way now
     qalpha = get_qalpha(alpha)
     # calculate critical difference with Nemenyi
-    cd = qalpha[n_estimators] * np.sqrt(
-        n_estimators * (n_estimators + 1) / (6 * n_datasets)
-    )
+    cd = qalpha[n_estimators] * np.sqrt(n_estimators * (n_estimators + 1) / (6 * n_datasets))
     # compute statistically similar cliques
-    cliques = np.tile(avranks, (n_estimators, 1)) - np.tile(
-        np.vstack(avranks.T), (1, n_estimators)
-    )
+    cliques = np.tile(avranks, (n_estimators, 1)) - np.tile(np.vstack(avranks.T), (1, n_estimators))
 
     cliques[cliques < 0] = np.inf
     cliques = cliques < cd
@@ -278,9 +270,7 @@ def plot_critical_difference(
             elif clique_method == "holm":
                 cliques = holm_cliques(scores, labels, ranked_data.mean(axis=0), alpha)
             else:
-                raise ValueError(
-                    "clique methods available are only nemenyi, bonferroni and holm."
-                )
+                raise ValueError("clique methods available are only nemenyi, bonferroni and holm.")
     # If Friedman test is not significant everything has to be one clique
     else:
         if cliques is None:

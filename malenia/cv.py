@@ -1,7 +1,6 @@
 import os
 
 import pandas as pd
-
 from aeon.utils.sampling import stratified_resample
 
 

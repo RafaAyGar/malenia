@@ -1,10 +1,7 @@
 import numpy as np
 from aeon.transformations.collection.shapelet_based._shapelet_transform import (
-    RandomShapeletTransform,
-    _calc_binary_ig,
-    _calc_early_binary_ig,
-    _online_shapelet_distance,
-)
+    RandomShapeletTransform, _calc_binary_ig, _calc_early_binary_ig,
+    _online_shapelet_distance)
 from aeon.utils.numba.general import z_normalise_series
 from numba import njit
 
@@ -45,9 +42,7 @@ class CustomRandomShapeletTransform(RandomShapeletTransform):
         inst_idx = i % self.n_instances_
         cls_idx = int(y[inst_idx])
         worst_quality = (
-            shapelets[cls_idx][0][0]
-            if len(shapelets[cls_idx]) == max_shapelets_per_class
-            else -1
+            shapelets[cls_idx][0][0] if len(shapelets[cls_idx]) == max_shapelets_per_class else -1
         )
 
         length = (
@@ -59,9 +54,7 @@ class CustomRandomShapeletTransform(RandomShapeletTransform):
 
         shapelet = z_normalise_series(X[inst_idx][channel][position : position + length])
         sabs = np.abs(shapelet)
-        sorted_indicies = np.array(
-            sorted(range(length), reverse=True, key=lambda j: sabs[j])
-        )
+        sorted_indicies = np.array(sorted(range(length), reverse=True, key=lambda j: sabs[j]))
 
         quality = self._find_shapelet_quality(
             X,

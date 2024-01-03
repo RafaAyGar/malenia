@@ -1,18 +1,17 @@
+from itertools import combinations
+
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
 
-from itertools import combinations
 from malenia.feature_selection._utils import get_pdfs_from_distribution
 
 
-
-def get_feature_importance(X, y, target_column = 'target'):
-
+def get_feature_importance(X, y, target_column="target"):
     data = X.copy()
     if type(data) is np.ndarray:
         data = pd.DataFrame(data)
-        
+
     features = data.columns.values
     data[target_column] = y
 
@@ -20,7 +19,7 @@ def get_feature_importance(X, y, target_column = 'target'):
     # for feature in X.columns:
     #     if feature != target_column:
     #         pdfs[feature] = get_pdfs_from_distribution(data, feature, target_column, distribution = stats.norm, plot=False)
-    
+
     data_by_class = dict()
     target_uniques = np.unique(data[target_column])
     for target in target_uniques:
@@ -33,7 +32,9 @@ def get_feature_importance(X, y, target_column = 'target'):
     n_combinations = len(list(class_combinations))
     for feature in features:
         feature_importance = 0
-        feature_pdfs_along_classes = get_pdfs_from_distribution(data, feature, target_column, distribution = stats.norm, plot=False)
+        feature_pdfs_along_classes = get_pdfs_from_distribution(
+            data, feature, target_column, distribution=stats.norm, plot=False
+        )
         test_ks_pvalues = []
         test_mw_pvalues = []
         for class_combination in combinations(target_uniques, 2):

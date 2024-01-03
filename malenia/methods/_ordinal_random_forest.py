@@ -2,11 +2,11 @@ import numpy as np
 from scipy.stats import logistic
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeRegressor
 
-from malenia.metrics import mmae, amae
+from malenia.metrics import amae, mmae
 
 
 class OrdinalRandomForest(BaseEstimator, ClassifierMixin):
@@ -21,8 +21,7 @@ class OrdinalRandomForest(BaseEstimator, ClassifierMixin):
         bottom_bounds = thresholds[:-1]
         upper_bounds = thresholds[1:]
         y_test_preds = np.argmax(
-            (y_latent_preds[:, None] >= bottom_bounds)
-            & (y_latent_preds[:, None] < upper_bounds),
+            (y_latent_preds[:, None] >= bottom_bounds) & (y_latent_preds[:, None] < upper_bounds),
             axis=1,
         )
 
@@ -42,9 +41,7 @@ class OrdinalRandomForest(BaseEstimator, ClassifierMixin):
         if self.best_rcp is not None:
             best_latent_y = np.zeros(self.n_instances_)
             for i in range(self.n_instances_):
-                best_latent_y[i] = logistic.ppf(
-                    (self.best_rcp[y[i]] + self.best_rcp[y[i] + 1]) / 2
-                )
+                best_latent_y[i] = logistic.ppf((self.best_rcp[y[i]] + self.best_rcp[y[i] + 1]) / 2)
 
             self.best_thresholds = logistic.ppf(self.best_rcp)
 
@@ -104,9 +101,7 @@ class OrdinalRandomForest(BaseEstimator, ClassifierMixin):
 
         best_latent_y = np.zeros(self.n_instances_)
         for i in range(self.n_instances_):
-            best_latent_y[i] = logistic.ppf(
-                (self.best_rcp[y[i]] + self.best_rcp[y[i] + 1]) / 2
-            )
+            best_latent_y[i] = logistic.ppf((self.best_rcp[y[i]] + self.best_rcp[y[i] + 1]) / 2)
 
         self.best_thresholds = logistic.ppf(self.best_rcp)
 

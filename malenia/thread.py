@@ -4,8 +4,9 @@ from logging import StreamHandler, getLogger
 
 import numpy as np
 from joblib import dump, load
-from malenia.save_and_load import save_method, save_predictions
 from pandas import Timestamp
+
+from malenia.save_and_load import save_method, save_predictions
 
 ## Uncomment when using sktime-dl methods
 # sys.path.append("/home/rayllon/GitHub/sktime-dl")
@@ -188,9 +189,7 @@ if save_fitted_strategies:
         save_method(method, job_info, results_path)
     except Exception as e:
         log.warning("ERROR SAVING method!")
-        log.warning(
-            f"SAVING method ERROR - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}"
-        )
+        log.warning(f"SAVING method ERROR - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}")
 #
 ###
 
@@ -280,9 +279,7 @@ try:
     )
     log.warning(f"Done! - Fit {job_info} saved!")
 except Exception as e:
-    log.warning(
-        f"SAVING PREDICTIONS ERROR - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}"
-    )
+    log.warning(f"SAVING PREDICTIONS ERROR - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}")
 #
 ###
 
@@ -291,19 +288,13 @@ except Exception as e:
 ##
 #
 if save_transformed_data_to_disk != "None":
-    save_transformed_data_to_disk = os.path.join(
-        save_transformed_data_to_disk, dataset.name
-    )
+    save_transformed_data_to_disk = os.path.join(save_transformed_data_to_disk, dataset.name)
     if not os.path.exists(save_transformed_data_to_disk):
         os.makedirs(save_transformed_data_to_disk)
     # Save transformed data to sikd using pickle dump() function
-    with open(
-        os.path.join(save_transformed_data_to_disk, f"train_fold_{fold}.pkl"), "wb"
-    ) as f:
+    with open(os.path.join(save_transformed_data_to_disk, f"train_fold_{fold}.pkl"), "wb") as f:
         dump(method.train_X_t__, f)
-    with open(
-        os.path.join(save_transformed_data_to_disk, f"test_fold_{fold}.pkl"), "wb"
-    ) as f:
+    with open(os.path.join(save_transformed_data_to_disk, f"test_fold_{fold}.pkl"), "wb") as f:
         dump(method.test_X_t__, f)
 #
 

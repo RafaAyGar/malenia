@@ -1,4 +1,5 @@
 import operator
+
 import numpy as np
 from scipy.stats import distributions, find_repeats, wilcoxon
 
@@ -244,13 +245,9 @@ def nemenyi_cliques(n_estimators, n_datasets, avranks, alpha):
     # Get critical value, there is an exact way now
     qalpha = get_qalpha(alpha)
     # calculate critical difference with Nemenyi
-    cd = qalpha[n_estimators] * np.sqrt(
-        n_estimators * (n_estimators + 1) / (6 * n_datasets)
-    )
+    cd = qalpha[n_estimators] * np.sqrt(n_estimators * (n_estimators + 1) / (6 * n_datasets))
     # compute statistically similar cliques
-    cliques = np.tile(avranks, (n_estimators, 1)) - np.tile(
-        np.vstack(avranks.T), (1, n_estimators)
-    )
+    cliques = np.tile(avranks, (n_estimators, 1)) - np.tile(np.vstack(avranks.T), (1, n_estimators))
     cliques[cliques < 0] = np.inf
     cliques = cliques < cd
     for i in range(n_estimators - 1, 0, -1):
@@ -267,14 +264,10 @@ def bonferroni_cliques(n_estimators, n_datasets, avranks, alpha):
     # Get critical value, there is an exact way now
     qalpha = get_qalpha(alpha)
     # calculate critical difference with Nemenyi
-    cd = qalpha[n_estimators] * np.sqrt(
-        n_estimators * (n_estimators + 1) / (6 * n_datasets)
-    )
+    cd = qalpha[n_estimators] * np.sqrt(n_estimators * (n_estimators + 1) / (6 * n_datasets))
 
     # compute statistically similar cliques
-    cliques = np.tile(avranks, (n_estimators, 1)) - np.tile(
-        np.vstack(avranks.T), (1, n_estimators)
-    )
+    cliques = np.tile(avranks, (n_estimators, 1)) - np.tile(np.vstack(avranks.T), (1, n_estimators))
 
     cliques[cliques < 0] = np.inf
     cliques = cliques < cd

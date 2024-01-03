@@ -12,15 +12,14 @@ import math
 import time
 
 import numpy as np
+from aeon.transformations.collection.base import BaseCollectionTransformer
+from aeon.utils.numba.general import z_normalise_series
+from aeon.utils.validation import check_n_jobs
 from joblib import Parallel, delayed
 from numba import njit
 from numba.typed.typedlist import List
 from sklearn import preprocessing
 from sklearn.utils import check_random_state
-
-from aeon.transformations.collection.base import BaseCollectionTransformer
-from aeon.utils.numba.general import z_normalise_series
-from aeon.utils.validation import check_n_jobs
 
 
 class RandomShapeletTransform(BaseCollectionTransformer):
@@ -238,9 +237,7 @@ class RandomShapeletTransform(BaseCollectionTransformer):
         if max_shapelets_per_class < 1:
             max_shapelets_per_class = 1
         # shapelet list content: quality, length, position, channel, inst_idx, cls_idx
-        shapelets = List(
-            [List([(-1.0, -1, -1, -1, -1, -1)]) for _ in range(self.n_classes)]
-        )
+        shapelets = List([List([(-1.0, -1, -1, -1, -1, -1)]) for _ in range(self.n_classes)])
         n_shapelets_extracted = 0
 
         if time_limit > 0:
@@ -280,8 +277,7 @@ class RandomShapeletTransform(BaseCollectionTransformer):
             while n_shapelets_extracted < self._n_shapelet_samples:
                 n_shapelets_to_extract = (
                     self._batch_size
-                    if n_shapelets_extracted + self._batch_size
-                    <= self._n_shapelet_samples
+                    if n_shapelets_extracted + self._batch_size <= self._n_shapelet_samples
                     else self._n_shapelet_samples - n_shapelets_extracted
                 )
 
@@ -336,9 +332,7 @@ class RandomShapeletTransform(BaseCollectionTransformer):
         for s in self.shapelets:
             sabs = np.abs(s[6])
             self._sorted_indicies.append(
-                np.array(
-                    sorted(range(s[1]), reverse=True, key=lambda j, sabs=sabs: sabs[j])
-                )
+                np.array(sorted(range(s[1]), reverse=True, key=lambda j, sabs=sabs: sabs[j]))
             )
         return self
 
@@ -358,9 +352,7 @@ class RandomShapeletTransform(BaseCollectionTransformer):
         output = np.zeros((len(X), len(self.shapelets)))
 
         for i, series in enumerate(X):
-            dists = Parallel(
-                n_jobs=self._n_jobs, backend=self.parallel_backend, prefer="threads"
-            )(
+            dists = Parallel(n_jobs=self._n_jobs, backend=self.parallel_backend, prefer="threads")(
                 delayed(_online_shapelet_distance)(
                     series[shapelet[3]],
                     shapelet[6],
@@ -397,19 +389,13 @@ class RandomShapeletTransform(BaseCollectionTransformer):
 
     def _extract_random_shapelet(self, X, y, i, shapelets, max_shapelets_per_class):
         rs = 255 if self.random_state == 0 else self.random_state
-        rs = (
-            None
-            if self.random_state is None
-            else (rs * 37 * (i + 1)) % np.iinfo(np.int32).max
-        )
+        rs = None if self.random_state is None else (rs * 37 * (i + 1)) % np.iinfo(np.int32).max
         rng = check_random_state(rs)
 
         inst_idx = i % self.n_instances
         cls_idx = int(y[inst_idx])
         worst_quality = (
-            shapelets[cls_idx][0][0]
-            if len(shapelets[cls_idx]) == max_shapelets_per_class
-            else -1
+            shapelets[cls_idx][0][0] if len(shapelets[cls_idx]) == max_shapelets_per_class else -1
         )
 
         length = (
@@ -421,9 +407,7 @@ class RandomShapeletTransform(BaseCollectionTransformer):
 
         shapelet = z_normalise_series(X[inst_idx, dim, position : position + length])
         sabs = np.abs(shapelet)
-        sorted_indicies = np.array(
-            sorted(range(length), reverse=True, key=lambda j: sabs[j])
-        )
+        sorted_indicies = np.array(sorted(range(length), reverse=True, key=lambda j: sabs[j]))
 
         quality = self._find_shapelet_quality(
             X,
@@ -511,9 +495,7 @@ class RandomShapeletTransform(BaseCollectionTransformer):
 
     @staticmethod
     @njit(fastmath=True, cache=True)
-    def _merge_shapelets(
-        shapelet_heap, candidate_shapelets, max_shapelets_per_class, cls_idx
-    ):
+    def _merge_shapelets(shapelet_heap, candidate_shapelets, max_shapelets_per_class, cls_idx):
         for shapelet in candidate_shapelets:
             if shapelet[5] == cls_idx and shapelet[0] > 0:
                 if (

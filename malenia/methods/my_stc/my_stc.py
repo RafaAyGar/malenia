@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
-import numpy as np
 from copy import copy
-from sklearn.model_selection import cross_val_predict
 
+import numpy as np
 from aeon.base._base import _clone_estimator
 from aeon.classification.base import BaseClassifier
 from aeon.classification.sklearn import RotationForestClassifier
-from aeon.transformations.collection.shapelet_transform import RandomShapeletTransform
+from aeon.transformations.collection.shapelet_transform import \
+    RandomShapeletTransform
 from aeon.utils.validation.panel import check_X_y
+from sklearn.model_selection import cross_val_predict
 
-from malenia.methods.my_stc.my_st import MyShapeletTransform
 from malenia.methods._base_saver_transformer import BaseSaveLoadTransformation
 from malenia.methods.my_stc.my_random_st_aeon import RandomShapeletTransform
+from malenia.methods.my_stc.my_st import MyShapeletTransform
 
 # from malenia.methods.my_stc.my_random_st_debugging import MyRandomShapeletTransformDebug
 
@@ -194,9 +195,7 @@ class MyShapeletTransformClassifier(BaseClassifier, BaseSaveLoadTransformation):
         if not self.save_transformed_data:
             raise ValueError("Currently only works with saved transform data from fit.")
 
-        if (isinstance(self.estimator, RotationForestClassifier)) or (
-            self.estimator is None
-        ):
+        if (isinstance(self.estimator, RotationForestClassifier)) or (self.estimator is None):
             return self._estimator._get_train_probs(self.transformed_data_, y)
         else:
             m = getattr(self._estimator, "predict_proba", None)

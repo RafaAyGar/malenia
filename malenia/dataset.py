@@ -38,12 +38,8 @@ class OrcaPythonDataset:
         self.name = name
 
     def load_crude(self):
-        train = pd.read_csv(
-            os.path.join(self.path, f"train_{self.name}.0"), sep=" ", header=None
-        )
-        test = pd.read_csv(
-            os.path.join(self.path, f"test_{self.name}.0"), sep=" ", header=None
-        )
+        train = pd.read_csv(os.path.join(self.path, f"train_{self.name}.0"), sep=" ", header=None)
+        test = pd.read_csv(os.path.join(self.path, f"test_{self.name}.0"), sep=" ", header=None)
         X_train = np.array(train.iloc[:, :-1])
         y_train = train.iloc[:, -1]
         X_test = np.array(test.iloc[:, :-1])

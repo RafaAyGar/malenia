@@ -7,9 +7,7 @@ from sklearn.metrics import recall_score
 
 
 class Results:
-    def __init__(
-        self, datasets, methods, metrics, results_path, seeds=30, rounding_decimals=4
-    ):
+    def __init__(self, datasets, methods, metrics, results_path, seeds=30, rounding_decimals=4):
         self.datasets = datasets
         self.methods = methods
         self.metrics = metrics
@@ -90,9 +88,7 @@ class Results:
         return is_equal
 
     def evaluate(self, verbose=True, evaluations_binaries_folder=None):
-        trying_to_load_or_save_evaluated_results_binaries = (
-            not evaluations_binaries_folder is None
-        )
+        trying_to_load_or_save_evaluated_results_binaries = not evaluations_binaries_folder is None
 
         if trying_to_load_or_save_evaluated_results_binaries:
             if not os.path.exists(evaluations_binaries_folder):
@@ -106,9 +102,7 @@ class Results:
                 last_id = int(str(evaluation_binaries[-1]).split("_")[-1].split(".")[0])
 
                 for evaluation in evaluation_binaries:
-                    evaluation = load(
-                        os.path.join(evaluations_binaries_folder, evaluation)
-                    )
+                    evaluation = load(os.path.join(evaluations_binaries_folder, evaluation))
                     if self._is_equal_to(evaluation):
                         print("Results already evaluated. Loading from binary file.")
                         return evaluation
@@ -175,9 +169,7 @@ class Results:
                 ###
                 ## Compute per class recall for every method-dataset-fold pair
                 #
-                per_class_recall_detail = self._get_per_class_recall_detail(
-                    y_true, y_pred
-                )
+                per_class_recall_detail = self._get_per_class_recall_detail(y_true, y_pred)
                 self.per_class_recall_detail[
                     method_pretty + "_" + dataset + "_" + str(seed)
                 ] = per_class_recall_detail
@@ -208,13 +200,9 @@ class Results:
                     self.per_class_recall[method_pretty] = dict()
 
                 if n_classes not in self.per_class_recall[method_pretty]:
-                    self.per_class_recall[method_pretty][n_classes] = [
-                        per_class_recall_detail
-                    ]
+                    self.per_class_recall[method_pretty][n_classes] = [per_class_recall_detail]
                 else:
-                    self.per_class_recall[method_pretty][n_classes].append(
-                        per_class_recall_detail
-                    )
+                    self.per_class_recall[method_pretty][n_classes].append(per_class_recall_detail)
                 ###
 
                 ###
@@ -240,9 +228,7 @@ class Results:
         ## Average per class recall
         #
         for method_pretty, method_info in self.methods.items():
-            for n_classes, per_class_recall_detail in self.per_class_recall[
-                method_pretty
-            ].items():
+            for n_classes, per_class_recall_detail in self.per_class_recall[method_pretty].items():
                 try:
                     self.per_class_recall[method_pretty][n_classes] = np.mean(
                         per_class_recall_detail, axis=0
@@ -255,12 +241,10 @@ class Results:
 
         self.results = pd.DataFrame(self.results)
         self.results = self.results.round(self.rounding_decimals)
-        self.results_by_method_dataset = self.results.groupby(
-            ["dataset", "method"]
-        ).mean(numeric_only=True)
-        self.results_by_method_dataset = self.results_by_method_dataset.drop(
-            columns=["seed"]
+        self.results_by_method_dataset = self.results.groupby(["dataset", "method"]).mean(
+            numeric_only=True
         )
+        self.results_by_method_dataset = self.results_by_method_dataset.drop(columns=["seed"])
         self.results_by_method_dataset = self.results_by_method_dataset.reset_index()
         self.results_by_method_dataset = self.results_by_method_dataset.round(
             self.rounding_decimals
@@ -282,9 +266,7 @@ class Results:
         for method_pretty, method_info in self.methods.items():
             missing_results[method_pretty] = dict()
             method_real = method_info
-            for dataset, seed, results_path in self._method_results_info_generator(
-                method_real
-            ):
+            for dataset, seed, results_path in self._method_results_info_generator(method_real):
                 if os.path.exists(results_path) == False:
                     if dataset in missing_results[method_pretty]:
                         missing_results[method_pretty][dataset] += 1
@@ -298,17 +280,13 @@ class Results:
         results_by_method = self.get_results_by_method()
         for strat1 in results_by_method["method"]:
             col = "VS " + strat1
-            s1 = results_by_method[results_by_method["method"] == strat1][
-                metric_name
-            ].values
+            s1 = results_by_method[results_by_method["method"] == strat1][metric_name].values
             win_losses = []
             for strat2 in results_by_method["method"]:
                 if strat1 == strat2:
                     win_losses.append("---")
                     continue
-                s2 = results_by_method[results_by_method["method"] == strat2][
-                    metric_name
-                ].values
+                s2 = results_by_method[results_by_method["method"] == strat2][metric_name].values
                 w = 0
                 l = 0
                 t = 0
@@ -325,9 +303,9 @@ class Results:
         return win_tie_losses
 
     def get_results_by_method(self):
-        self.results_by_method = self.results_by_method_dataset.groupby(
-            ["method"]
-        ).mean(numeric_only=True)
+        self.results_by_method = self.results_by_method_dataset.groupby(["method"]).mean(
+            numeric_only=True
+        )
         self.results_by_method = self.results_by_method.sort_values(
             by=list(self.metrics.keys()), ascending=False
         )
@@ -341,15 +319,11 @@ class Results:
             results_by_method_dataset = self.results_by_method_dataset
 
         df = results_by_method_dataset.sort_values(["dataset", "method"])
-        results_by_methods_dataset_metric = df[
-            df["method"] == self.methods_real_names[0]
-        ].copy()
+        results_by_methods_dataset_metric = df[df["method"] == self.methods_real_names[0]].copy()
         for pretty_method_name in self.methods.keys():
             method_results = list(df[df["method"] == pretty_method_name][metric])
             results_by_methods_dataset_metric[pretty_method_name] = method_results
-            results_by_methods_dataset_metric[pretty_method_name].round(
-                self.rounding_decimals
-            )
+            results_by_methods_dataset_metric[pretty_method_name].round(self.rounding_decimals)
             results_by_methods_dataset_metric["dataset"] = df["dataset"].unique()
         final_results_by_methods_dataset_metric = results_by_methods_dataset_metric[
             ["dataset"] + list(self.methods.keys())
@@ -359,8 +333,8 @@ class Results:
         )
         final_results_by_methods_dataset_metric.sort_values(by=["dataset"])
         final_results_by_methods_dataset_metric.set_index("dataset", inplace=True)
-        final_results_by_methods_dataset_metric = (
-            final_results_by_methods_dataset_metric.round(self.rounding_decimals)
+        final_results_by_methods_dataset_metric = final_results_by_methods_dataset_metric.round(
+            self.rounding_decimals
         )
         return final_results_by_methods_dataset_metric
 
@@ -377,9 +351,7 @@ class Results:
                 new_cols.append(rank_col)
 
             metric_results_by_dataset = metric_results_by_dataset[new_cols]
-            metric_results_by_dataset[
-                "Datasets"
-            ] = metric_results_by_dataset.index.values
+            metric_results_by_dataset["Datasets"] = metric_results_by_dataset.index.values
             metric_results_by_dataset = metric_results_by_dataset.set_index("Datasets")
             metric_results_by_dataset.to_excel(output_file)
         return metric_results_by_dataset

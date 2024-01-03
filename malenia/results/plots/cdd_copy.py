@@ -1,26 +1,26 @@
 import math
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-
 from scipy.stats import rankdata
-from malenia.results.plots.cdd_aux import nemenyi_cliques, bonferroni_cliques, holm_cliques, _check_friedman    
 
+from malenia.results.plots.cdd_aux import (_check_friedman, bonferroni_cliques,
+                                           holm_cliques, nemenyi_cliques)
 
 
 def plot_CDD(
     results,
     metric_name,
-    greaterIsBetter = True,
-    methods = "all",
-    s = None,
-    alpha = 0.05,
-    cliques = None,
-    clique_method = "nemenyi",
-    savefile_format = "pdf",
-    savefile=None
-): 
-    
+    greaterIsBetter=True,
+    methods="all",
+    s=None,
+    alpha=0.05,
+    cliques=None,
+    clique_method="nemenyi",
+    savefile_format="pdf",
+    savefile=None,
+):
     if s is None:
         s = results.get_results_by_dataset_metric(metric_name)
         s = s.reset_index(drop=True)
@@ -41,7 +41,7 @@ def plot_CDD(
     # compute average rankss
     avg_r = np.mean(r, axis=0)
     idx = np.argsort(avg_r, axis=0)
-    
+
     is_significant = _check_friedman(n_methods, n_datasets, r, alpha)
     # Step 4: If Friedman test is significant find cliques
     if is_significant:
@@ -53,9 +53,7 @@ def plot_CDD(
             elif clique_method == "holm":
                 cliques = holm_cliques(s, labels, avg_r, alpha)
             else:
-                raise ValueError(
-                    "clique methods available are only nemenyi, bonferroni and holm."
-                )
+                raise ValueError("clique methods available are only nemenyi, bonferroni and holm.")
 
     avg_r = np.sort(avg_r, axis=0)
     avg_r = avg_r.T
@@ -75,8 +73,7 @@ def plot_CDD(
         color="black",
     )
     tics = np.tile(
-        (np.array(range(0, n_methods - 1)) / (n_methods - 1))
-        + 0.5 / (n_methods - 1),
+        (np.array(range(0, n_methods - 1)) / (n_methods - 1)) + 0.5 / (n_methods - 1),
         (3, 1),
     )
     plt.plot(
@@ -98,25 +95,31 @@ def plot_CDD(
     n = cliques.shape[0]
 
     # labels displayed on the right
-    for i in range(int(math.ceil(n_methods/2))):
+    for i in range(int(math.ceil(n_methods / 2))):
         plt.plot(
             [
                 (n_methods - avg_r[i]) / (n_methods - 1),
-                ((n_methods - avg_r[i])/(n_methods - 1)),
-                1.2
+                ((n_methods - avg_r[i]) / (n_methods - 1)),
+                1.2,
             ],
-            [
-                100,
-                100 - 5 * (n + 1) - 10 * (i + 1),
-                100 - 5 * (n + 1) - 10 * (i + 1)
-            ],
-            color='black'
+            [100, 100 - 5 * (n + 1) - 10 * (i + 1), 100 - 5 * (n + 1) - 10 * (i + 1)],
+            color="black",
         )
         plt.text(
             1.2,
-            100 - 5 * (n + 1) - 10 * (i + 1) + 2, "%.2f" % avg_r[i], fontsize=10, horizontalalignment='right')
-        plt.text(1.25, 100 - 5*(n+1) - 10*(i+1), labels[idx[i]], fontsize=12, verticalalignment='center', horizontalalignment='left')
-
+            100 - 5 * (n + 1) - 10 * (i + 1) + 2,
+            "%.2f" % avg_r[i],
+            fontsize=10,
+            horizontalalignment="right",
+        )
+        plt.text(
+            1.25,
+            100 - 5 * (n + 1) - 10 * (i + 1),
+            labels[idx[i]],
+            fontsize=12,
+            verticalalignment="center",
+            horizontalalignment="left",
+        )
 
     # labels displayed on the left
     for i in range(int(np.ceil(n_methods / 2)), n_methods):
@@ -166,8 +169,8 @@ def plot_CDD(
 
     if savefile is None:
         alpha_str = str(alpha).replace(".", "_")
-        savefile = F"./results_files/cdd__{metric_name.upper()}__{alpha_str}.{savefile_format}"
-    fig.savefig(savefile, pad_inches = 0, bbox_inches='tight')
+        savefile = f"./results_files/cdd__{metric_name.upper()}__{alpha_str}.{savefile_format}"
+    fig.savefig(savefile, pad_inches=0, bbox_inches="tight")
 
     plt.show()
     plt.clf()
@@ -192,9 +195,9 @@ def find_sames(p_vals, idx, methods, alpha):
                 same.loc[method_A, method_B] = True
                 continue
 
-            if (method_A + "_" + method_B in p_vals.index):
+            if method_A + "_" + method_B in p_vals.index:
                 p_val = p_vals.loc[method_A + "_" + method_B]["p_val"]
-            elif (method_B + "_" + method_A in p_vals.index):
+            elif method_B + "_" + method_A in p_vals.index:
                 p_val = p_vals.loc[method_B + "_" + method_A]["p_val"]
             else:
                 raise Exception("No p-value for {} and {}".format(method_A, method_B))
@@ -211,7 +214,7 @@ def find_sames(p_vals, idx, methods, alpha):
 def findCliques(same):
     cliques = []
     prevEndOfClique = 0
-    
+
     for i in range(len(same)):
         clique = [i]
         growClique(same, clique)
@@ -221,39 +224,39 @@ def findCliques(same):
             if endOfClique > prevEndOfClique:
                 cliques.append(clique)
                 prevEndOfClique = endOfClique
-    
-    finalCliques = [[False]*len(same) for _ in range(len(cliques))]
+
+    finalCliques = [[False] * len(same) for _ in range(len(cliques))]
     for i in range(len(cliques)):
         for j in range(len(cliques[i])):
             finalCliques[i][cliques[i][j]] = True
-    
+
     return finalCliques
 
 
 def growClique(same, clique):
     prevVal = clique[-1]
-    if prevVal == len(same)-1:
+    if prevVal == len(same) - 1:
         return
 
     cliqueStart = clique[0]
-    nextVal = prevVal+1
+    nextVal = prevVal + 1
 
     for col in range(cliqueStart, nextVal):
         if not same[nextVal][col]:
             return
-    
+
     clique.append(nextVal)
     growClique(same, clique)
 
 
 def testNewCliques():
     same = [
-        [True,  True,  True,  False, False, False],
-        [True,  True,  True,  True,  False, False],
-        [True,  True,  True,  False, True,  True],
-        [False, True,  False, True,  True,  True],
-        [False, False, True,  True,  True,  True],
-        [False, False, True,  True,  True,  True],
+        [True, True, True, False, False, False],
+        [True, True, True, True, False, False],
+        [True, True, True, False, True, True],
+        [False, True, False, True, True, True],
+        [False, False, True, True, True, True],
+        [False, False, True, True, True, True],
     ]
-    
+
     noDifference = same

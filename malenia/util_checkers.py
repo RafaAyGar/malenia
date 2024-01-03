@@ -1,12 +1,11 @@
 import os
 
+
 def check_condor_errors(
-        directory = None,
-        father_dir = "/home/rayllon/INCEPTION/orchestator/",
-        cpu_or_gpu = "cpu"
-    ):
+    directory=None, father_dir="/home/rayllon/INCEPTION/orchestator/", cpu_or_gpu="cpu"
+):
     """
-        This function checks the condor output files for errors, and print the file in case of finding an error.
+    This function checks the condor output files for errors, and print the file in case of finding an error.
     """
     if directory is None:
         if cpu_or_gpu == "cpu":
@@ -30,18 +29,22 @@ def check_condor_errors(
                 if error_found:
                     print("\n \n")
                     print("--- ERROR found in file: " + file + " ---\n")
-                    print("************************************************************************************\n")
+                    print(
+                        "************************************************************************************\n"
+                    )
                     print(content)
-                    print("************************************************************************************\n")
+                    print(
+                        "************************************************************************************\n"
+                    )
                     print("---")
                 f.close()
 
 
 def check_condor_dones(
-        directory = None,
-    ):
+    directory=None,
+):
     """
-        This function checks the condor output files for errors, and print the file in case of finding an error.
+    This function checks the condor output files for errors, and print the file in case of finding an error.
     """
     if "condor_output" not in directory:
         print("ERROR: The directory must be a condor_output directory.")
@@ -58,7 +61,7 @@ def check_condor_dones(
                 content = ""
                 for line in f:
                     content += line
-                    if ( "done" in line.lower() ) and ( not "error" in line.lower() ):
+                    if ("done" in line.lower()) and (not "error" in line.lower()):
                         done_found = True
                 if done_found:
                     dones_found += 1
@@ -69,10 +72,10 @@ def check_condor_dones(
 
 
 def check_condor_undones(
-        directory = None,
-    ):
+    directory=None,
+):
     """
-        This function checks the condor output files for errors, and print the file in case of finding an error.
+    This function checks the condor output files for errors, and print the file in case of finding an error.
     """
     if "condor_output" not in directory:
         print("ERROR: The directory must be a condor_output directory.")
@@ -89,7 +92,7 @@ def check_condor_undones(
                 content = ""
                 for line in f:
                     content += line
-                    if ( "done" in line.lower() ) or ( "error" in line.lower() ):
+                    if ("done" in line.lower()) or ("error" in line.lower()):
                         undone_found = False
                 if undone_found:
                     undones_found += 1
