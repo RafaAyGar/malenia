@@ -27,6 +27,7 @@ def save_predictions(
         y_true,
         y_pred,
         y_proba,
+        oob_probas,
         fit_estimator_start_time,
         fit_estimator_end_time,
         predict_estimator_start_time,
@@ -35,17 +36,23 @@ def save_predictions(
         job_info,
         results_path):
     path = get_job_path(job_info, results_path) + train_or_test + ".csv"
+
     if not os.path.exists(os.path.dirname(path)):
-        os.makedirs(os.path.dirname(path))
+        os.makedirs(os.path.dirname(path), exist_ok=True)
 
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
     y_proba = np.asarray(y_proba)
+    if oob_probas is not None:
+        oob_probas = np.asarray(oob_probas)
+    else:
+        oob_probas = np.zeros(y_proba.shape)
     preds = pd.DataFrame(
         {
             "y_true": y_true,
             "y_pred": y_pred,
             "y_proba": pd.Series(list(y_proba)),
+            "oob_probas": pd.Series(list(oob_probas)),
             "fit_estimator_start_time": fit_estimator_start_time,
             "fit_estimator_end_time": fit_estimator_end_time,
             "predict_estimator_start_time": predict_estimator_start_time,

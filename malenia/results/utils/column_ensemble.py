@@ -33,10 +33,15 @@ def ensemble_columns(results):
 
     for index, predictions in manager_ensembled.items():
         Method, Dataset, Seed = index.split("__")
+        print("Method", Method)
 
         if "_" in Method:
-            method_pretty, method_specific = Method.split("_")
-            method_dataset_results_path = os.path.join(results.results_path, method_pretty, method_specific, Dataset)
+            method_general = Method.split("_")[0]
+            method_specific = ""
+            for part in Method.split("_")[1:]:
+                method_specific += part + "_"
+            method_specific = method_specific[:-1]
+            method_dataset_results_path = os.path.join(results.results_path, method_general, method_specific, Dataset)
         else:
             method_dataset_results_path = os.path.join(results.results_path, Method, Dataset)
 

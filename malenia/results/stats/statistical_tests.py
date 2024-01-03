@@ -10,8 +10,8 @@ def wilcoxon_test(results_per_method_dataset):
         estim_1 = p[0]
         estim_2 = p[1]
         w, p_val = stats.wilcoxon(
-            results_per_method_dataset[p[0]], results_per_method_dataset[p[1]],
-            method = "approx"
+            results_per_method_dataset[estim_1], results_per_method_dataset[estim_2],
+            zero_method="wilcox"
         )
 
         w_test = {

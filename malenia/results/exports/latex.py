@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+from malenia.results.plots.cdd import get_rankings
 
 
 def export_results_by_dataset_metric_to_latex(results, metric_name, greaterIsBetter = True, means = None, stds_added = None, filename = None):
@@ -20,7 +20,7 @@ def export_results_by_dataset_metric_to_latex(results, metric_name, greaterIsBet
 
     results.stds = stds
 
-    rankings = results.get_rankings(metric_name, greaterIsBetter, s=means)
+    rankings = get_rankings(results, metric_name, greaterIsBetter, s=means)
     a = pd.DataFrame([list(rankings)], columns=means.columns, index=["Rankings"])
     means = pd.concat([means, a], ignore_index=False)
     
@@ -67,3 +67,26 @@ def export_results_by_dataset_metric_to_latex(results, metric_name, greaterIsBet
             f.write(latex.style.to_latex(column_format="@{}M{3.9cm}ccccc@{}"))
     
     return latex
+
+
+
+def export_wilcoxon_table_to_latex(wilcoxon_dataframe, alpha=0.01, filename = None):
+
+
+    for i in range(wilcoxon_dataframe.shape[0]):
+        for j in range(wilcoxon_dataframe.shape[1]):
+            value = wilcoxon_dataframe.iloc[i, j]
+            if value < alpha:
+                wilcoxon_dataframe.iloc[i, j] = f"$\\mathbf{'{< 0.01}'}$"
+
+    # Write the formatted dataframe to a LaTeX table file
+    if not filename is None:
+        with open(filename, 'w') as f:
+            # f.write("\\newcolumntype{M}[1]{>{\\arraybackslash}m{#1}}\n")
+            n_cols = wilcoxon_dataframe.shape[1]
+            cols_string = ""
+            for i in range(n_cols):
+                cols_string += "c"
+            f.write(wilcoxon_dataframe.style.to_latex(column_format="@{}" + cols_string + "@{}"))
+    
+    return wilcoxon_dataframe

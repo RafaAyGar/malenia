@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from scipy.stats import rankdata
 from malenia.results.stats import wilcoxon_test
 
 def plot_CDD(
@@ -13,9 +14,10 @@ def plot_CDD(
     s = None,
     alpha = 0.05,
     clique = None,
-    savefile=None
+    savefile="",
+    savefile_format="pdf"
 ): 
-    
+    not_corrected_alpha = alpha
     if s is None:
         s = results.get_results_by_dataset_metric(metric_name)
         s = s.reset_index(drop=True)
@@ -23,52 +25,65 @@ def plot_CDD(
     if methods != "all":
         s = s[methods]
 
-    if greaterIsBetter:
-        s = s * (-1)
-
-    labels = list(s.columns)
-
     N,k = s.shape
-    S = np.sort(s.T, axis=0)
-    r = np.argsort(s.T, axis=0)
-    idx = k * np.tile(np.arange(N), (k, 1)).T + r.T
-    R = np.tile(np.arange(1, k+1), (N, 1))
-    S = np.transpose(S)
-    for i in range(N):
-        for j in range(k):
-            index = S[i,j] == S[i,:]
-            R[i,index] = np.mean(R[i,index])
+
+    # S = np.sort(s.T, axis=0)
+    # r = np.argsort(s.T, axis=0)
+    # idx = k * np.tile(np.arange(N), (k, 1)).T + r.T
+    # R = np.tile(np.arange(1, k+1), (N, 1))
+    # S = np.transpose(S)
+    # for i in range(N):
+    #     for j in range(k):
+    #         index = S[i,j] == S[i,:]
+    #         R[i,index] = np.mean(R[i,index])
 
 
-    r_flat = r.to_numpy().flatten()
-    R_flat = R.flatten()
-    idx_flat = idx.to_numpy().flatten()
-    for i, i_val in enumerate(idx_flat):
-        r_flat[i_val] = R_flat[i]
-    r_flat = r_flat.reshape(r.shape, order='F')
+    # r_flat = r.to_numpy().flatten()
+    # R_flat = R.flatten()
+    # idx_flat = idx.to_numpy().flatten()
+    # for i, i_val in enumerate(idx_flat):
+    #     r_flat[i_val] = R_flat[i]
+    # r_flat = r_flat.reshape(r.shape, order='F')
 
-    r = r_flat
-    r = np.transpose(r)
-    
-    if alpha == 0.01:
-        qalpha = np.array([0.0,2.576,2.913,3.113,3.255,3.364,3.452,3.526,3.59,3.646,3.696,3.741,3.781,3.818,3.853,3.884,3.914,3.941,3.967,3.992,4.015,4.037,4.057,4.077,4.096,4.114,4.132,4.148,4.164,4.179,4.194,4.208,4.222,4.236,4.249,4.261,4.273,4.285,4.296,4.307,4.318,4.329,4.339,4.349,4.359,4.368,4.378,4.387,4.395,4.404,4.412,4.42,4.428,4.435,4.442,4.449,4.456])
-    elif alpha == 0.05:
-        qalpha = np.array([0.0,1.96,2.344,2.569,2.728,2.85,2.948,3.031,3.102,3.164,3.219,3.268,3.313,3.354,3.391,3.426,3.458,3.489,3.517,3.544,3.569,3.593,3.616,3.637,3.658,3.678,3.696,3.714,3.732,3.749,3.765,3.78,3.795,3.81,3.824,3.837,3.85,3.863,3.876,3.888,3.899,3.911,3.922,3.933,3.943,3.954,3.964,3.973,3.983,3.992,4.001,4.009,4.017,4.025,4.032,4.04,4.046])
-    elif alpha == 0.1:
-        qalpha = np.array([0.0,1.645,2.052,2.291,2.46,2.589,2.693,2.78,2.855,2.92,2.978,3.03,3.077,3.12,3.159,3.196,3.23,3.261,3.291,3.319,3.346,3.371,3.394,3.417,3.439,3.459,3.479,3.498,3.516,3.533,3.55,3.567,3.582,3.597,3.612,3.626,3.64,3.653,3.666,3.679,3.691,3.703,3.714,3.726,3.737,3.747,3.758,3.768,3.778,3.788,3.797,3.806,3.814,3.823,3.831,3.838,3.846])
+    # r = r_flat
+    # r = np.transpose(r)
+
+    round_decimals = 4 if results is None else results.rounding_decimals
+
+    if not greaterIsBetter:
+        r = get_rankings(s * (-1), round_decimals)
     else:
-        raise Exception('alpha must be 0.01, 0.05 or 0.1')
+        r = get_rankings(s, round_decimals)
     
+    # if alpha == 0.01:
+    #     qalpha = np.array([0.0,2.576,2.913,3.113,3.255,3.364,3.452,3.526,3.59,3.646,3.696,3.741,3.781,3.818,3.853,3.884,3.914,3.941,3.967,3.992,4.015,4.037,4.057,4.077,4.096,4.114,4.132,4.148,4.164,4.179,4.194,4.208,4.222,4.236,4.249,4.261,4.273,4.285,4.296,4.307,4.318,4.329,4.339,4.349,4.359,4.368,4.378,4.387,4.395,4.404,4.412,4.42,4.428,4.435,4.442,4.449,4.456])
+    # elif alpha == 0.05:
+    #     qalpha = np.array([0.0,1.96,2.344,2.569,2.728,2.85,2.948,3.031,3.102,3.164,3.219,3.268,3.313,3.354,3.391,3.426,3.458,3.489,3.517,3.544,3.569,3.593,3.616,3.637,3.658,3.678,3.696,3.714,3.732,3.749,3.765,3.78,3.795,3.81,3.824,3.837,3.85,3.863,3.876,3.888,3.899,3.911,3.922,3.933,3.943,3.954,3.964,3.973,3.983,3.992,4.001,4.009,4.017,4.025,4.032,4.04,4.046])
+    # elif alpha == 0.1:
+    #     qalpha = np.array([0.0,1.645,2.052,2.291,2.46,2.589,2.693,2.78,2.855,2.92,2.978,3.03,3.077,3.12,3.159,3.196,3.23,3.261,3.291,3.319,3.346,3.371,3.394,3.417,3.439,3.459,3.479,3.498,3.516,3.533,3.55,3.567,3.582,3.597,3.612,3.626,3.64,3.653,3.666,3.679,3.691,3.703,3.714,3.726,3.737,3.747,3.758,3.768,3.778,3.788,3.797,3.806,3.814,3.823,3.831,3.838,3.846])
+    # else:
+    #     raise Exception('alpha must be 0.01, 0.05 or 0.1')
+    
+    # Get number of comparisons
+    # n_comparisons = math.factorial(k) / (math.factorial(2) * math.factorial(k-2))
 
-    # compute critical difference
-    cd = qalpha[k - 1] * np.sqrt(
-        k * (k + 1) / (6 * N)
-    )
+    # Apply Holm's correction to alpha
+    # alpha = get_qalpha(alpha)
+    alpha = alpha / (k - 1)
+
+    # alpha = qalpha[k] * np.sqrt(
+    #     k * (k + 1) / (6 * N)
+    # )
+
+    # # Compute critical difference
+    # cd = qalpha[k - 1] * np.sqrt(
+    #     k * (k + 1) / (6 * N)
+    # )
 
     # set up plot
     plt.clf()
     fig, ax = plt.subplots(1)
-    ax.set_xlim(-0.5, 1.5)
+    ax.set_xlim(-0.2, 1.2)
     ax.set_ylim(0, 140)
     ax.set_axis_off()
 
@@ -122,20 +137,29 @@ def plot_CDD(
 
     # compute average rankss
     r = np.mean(r, axis=0)
-    idx = np.argsort(r, axis=0)
-    results.ranks_idx = idx
+    d = pd.DataFrame([r, s.columns.values]).T
+    # sort by average ranks
+    d = d.sort_values(by=0, ascending=True)
+    d.reset_index(drop=True, inplace=True)
+    # d = d.to_numpy()
+    # idx = np.argsort(r, axis=0)
+    idx = d.index.values
+    labels = d[1].values
+    # results.ranks_idx = idx
     r = np.sort(r, axis=0)
 
     # compute statistically similar cliques
     if clique is None:
         p_vals = wilcoxon_test(s)
+        print("pvals:", p_vals)
         p_vals_index = p_vals["estimator_1"] + "_" + p_vals["estimator_2"]
         p_vals.set_index(p_vals_index, inplace=True)
-        results.p_vals = p_vals
-        sames = find_sames(p_vals, idx, s.columns.values, alpha)
-        results.sames = sames
+        # results.p_vals = p_vals
+        sames = find_sames(p_vals, idx, labels, alpha)
+        print("sames:", sames)
+        # results.sames = sames
         clique = findCliques(np.array(sames))
-        results.cliques = clique
+        # results.cliques = clique
     else:
         if clique.size > 0:
             clique = clique[:, idx] > 0
@@ -166,8 +190,7 @@ def plot_CDD(
 
     # labels displayed on the left
     for i in range(int(np.ceil(k / 2)), k):
-        plt.plot(
-            [
+        plt.plot(            [
                 (k - r[i]) / (k - 1),
                 (k - r[i]) / (k - 1),
                 -0.2,
@@ -200,8 +223,8 @@ def plot_CDD(
         R = r[clique[i, :]]
         plt.plot(
             [
-                ((k - np.min(R)) / (k - 1)) + 0.015,
-                ((k - np.max(R)) / (k - 1)) - 0.015,
+                ((k - np.min(R)) / (k - 1)) + 0.01,
+                ((k - np.max(R)) / (k - 1)) - 0.01,
             ],
             [100 - 5 * (i + 1), 100 - 5 * (i + 1)],
             linewidth=6,
@@ -210,46 +233,22 @@ def plot_CDD(
 
     fig.dpi = 100
 
-    if not savefile is None:
-        fig.savefig(savefile, pad_inches = 0, bbox_inches='tight')
+    if savefile == "":
+        alpha_str = str(not_corrected_alpha).replace(".", "_")
+        savefile = F"./results_files/cdd__{metric_name.upper()}__{alpha_str}.{savefile_format}"
+    fig.savefig(savefile, pad_inches = 0, bbox_inches='tight')
 
     plt.show()
     plt.clf()
     plt.close()
 
 
-def get_rankings(results, metric, greaterIsBetter, s = None):
-    if s is None:
-        s = results.get_results_by_dataset_metric(metric)
-        s = s.reset_index(drop=True)
+def get_rankings(s, rounding_decimals):
+    ranks = rankdata(s, axis=1)
 
-    if greaterIsBetter:
-        s = s * (-1)
+    ranks.round(rounding_decimals)
 
-    N,k = s.shape
-    S = np.sort(s.T, axis=0)
-    r = np.argsort(s.T, axis=0)
-    idx = k * np.tile(np.arange(N), (k, 1)).T + r.T
-    R = np.tile(np.arange(1, k+1), (N, 1))
-    S = np.transpose(S)
-    for i in range(N):
-        for j in range(k):
-            index = S[i,j] == S[i,:]
-            R[i,index] = np.mean(R[i,index])
-
-    r_flat = r.to_numpy().flatten()
-    R_flat = R.flatten()
-    idx_flat = idx.to_numpy().flatten()
-    for i, i_val in enumerate(idx_flat):
-        r_flat[i_val] = R_flat[i]
-    r_flat = r_flat.reshape(r.shape, order='F')
-
-    r = r_flat
-    r = np.transpose(r)
-    
-    r = np.mean(r, axis=0)
-
-    return r.round(results.rounding_decimals)
+    return ranks
 
 
 def find_sames(p_vals, idx, methods, alpha):
@@ -269,12 +268,15 @@ def find_sames(p_vals, idx, methods, alpha):
             else:
                 raise Exception("No p-value for {} and {}".format(method_A, method_B))
 
+            # print("Method A: {}, Method B: {}, p-value: {}, alpha: {}".format(method_A, method_B, p_val, alpha))
+
             if p_val < alpha:
                 same.loc[method_A, method_B] = False
                 same.loc[method_B, method_A] = False
             else:
                 same.loc[method_A, method_B] = True
                 same.loc[method_B, method_A] = True
+
     return same
 
 
@@ -282,6 +284,8 @@ def findCliques(same):
     cliques = []
     prevEndOfClique = 0
     
+    # print(same)
+
     for i in range(len(same)):
         clique = [i]
         growClique(same, clique)
@@ -327,3 +331,190 @@ def testNewCliques():
     ]
     
     noDifference = same
+
+def get_qalpha(alpha: float):
+    """Get the alpha value for post hoc Nemenyi."""
+    if alpha == 0.01:
+        qalpha = [
+            0.000,
+            2.576,
+            2.913,
+            3.113,
+            3.255,
+            3.364,
+            3.452,
+            3.526,
+            3.590,
+            3.646,
+            3.696,
+            3.741,
+            3.781,
+            3.818,
+            3.853,
+            3.884,
+            3.914,
+            3.941,
+            3.967,
+            3.992,
+            4.015,
+            4.037,
+            4.057,
+            4.077,
+            4.096,
+            4.114,
+            4.132,
+            4.148,
+            4.164,
+            4.179,
+            4.194,
+            4.208,
+            4.222,
+            4.236,
+            4.249,
+            4.261,
+            4.273,
+            4.285,
+            4.296,
+            4.307,
+            4.318,
+            4.329,
+            4.339,
+            4.349,
+            4.359,
+            4.368,
+            4.378,
+            4.387,
+            4.395,
+            4.404,
+            4.412,
+            4.420,
+            4.428,
+            4.435,
+            4.442,
+            4.449,
+            4.456,
+        ]
+    elif alpha == 0.05:
+        qalpha = [
+            0.000,
+            1.960,
+            2.344,
+            2.569,
+            2.728,
+            2.850,
+            2.948,
+            3.031,
+            3.102,
+            3.164,
+            3.219,
+            3.268,
+            3.313,
+            3.354,
+            3.391,
+            3.426,
+            3.458,
+            3.489,
+            3.517,
+            3.544,
+            3.569,
+            3.593,
+            3.616,
+            3.637,
+            3.658,
+            3.678,
+            3.696,
+            3.714,
+            3.732,
+            3.749,
+            3.765,
+            3.780,
+            3.795,
+            3.810,
+            3.824,
+            3.837,
+            3.850,
+            3.863,
+            3.876,
+            3.888,
+            3.899,
+            3.911,
+            3.922,
+            3.933,
+            3.943,
+            3.954,
+            3.964,
+            3.973,
+            3.983,
+            3.992,
+            4.001,
+            4.009,
+            4.017,
+            4.025,
+            4.032,
+            4.040,
+            4.046,
+        ]
+    elif alpha == 0.1:
+        qalpha = [
+            0.000,
+            1.645,
+            2.052,
+            2.291,
+            2.460,
+            2.589,
+            2.693,
+            2.780,
+            2.855,
+            2.920,
+            2.978,
+            3.030,
+            3.077,
+            3.120,
+            3.159,
+            3.196,
+            3.230,
+            3.261,
+            3.291,
+            3.319,
+            3.346,
+            3.371,
+            3.394,
+            3.417,
+            3.439,
+            3.459,
+            3.479,
+            3.498,
+            3.516,
+            3.533,
+            3.550,
+            3.567,
+            3.582,
+            3.597,
+            3.612,
+            3.626,
+            3.640,
+            3.653,
+            3.666,
+            3.679,
+            3.691,
+            3.703,
+            3.714,
+            3.726,
+            3.737,
+            3.747,
+            3.758,
+            3.768,
+            3.778,
+            3.788,
+            3.797,
+            3.806,
+            3.814,
+            3.823,
+            3.831,
+            3.838,
+            3.846,
+        ]
+        #
+    else:
+        raise Exception("alpha must be 0.01, 0.05 or 0.1")
+    return qalpha

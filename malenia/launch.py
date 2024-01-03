@@ -3,6 +3,11 @@ import sys
 import malenia
 from joblib import dump
 
+def get_data_aug_name(data_aug_object):
+        name = "data_aug"
+        for technique in data_aug_object.aug_techniques:
+            name += "_" + technique
+        return name
 
 class Launcher:
     def __init__(
@@ -11,15 +16,20 @@ class Launcher:
         datasets,
         cv,
         results_path,
-        condor_files_path="condor_files",
+        condor_files_path = "condor_files",
         seeds = 30,
-        submission_params=None,
+        save_transformed_data_to_disk = None,
+        transformed_data_path = None,
+        submission_params = None,
     ):
         self.methods = methods
         self.datasets = datasets
         self.cv = cv
         self.results_path = results_path
         self.seeds = seeds
+        self.save_transformed_data_to_disk = save_transformed_data_to_disk
+        self.transformed_data_path = transformed_data_path
+
         self.submission_params = submission_params
 
         self.condor_files_path = condor_files_path
@@ -69,7 +79,16 @@ class Launcher:
             dataset_path = self._dump_in_condor_tmp_path(dataset.name, dataset)
             for method_name, method in self.methods.items():
                 method_name_global, method_name_specif, seed = self._extract_global_and_specific_method_name(method_name)
-                cv_path = self._dump_in_condor_tmp_path("cv", self.cv)
+                # if self.transformed_data_path is not None:
+                #     transformed_data_path = os.path.join(self.transformed_data_path, dataset.name, f"train_fold_{seed}.pkl")
+                # else:
+                #     transformed_data_path = None
+                cv_path = self._dump_in_condor_tmp_path("cv", self.cv)                    
+                if isinstance(method, list):
+                    data_augmentation = self._dump_in_condor_tmp_path(get_data_aug_name(method[1]), method[1])
+                    method = method[0]
+                else:
+                    data_augmentation = None
                 method_path = self._dump_in_condor_tmp_path(method_name, method)
                 results_filename = "seed_" + seed
                 results_path = os.path.join(self.results_path, method_name_global, method_name_specif, dataset.name, results_filename)
@@ -93,13 +112,16 @@ class Launcher:
                     str(save_fitted_methods) + "," +
                     str(method_name_global) + "__" + str(method_name_specif) + "__" + str(dataset.name) + "__" + seed + "," +
                     self.results_path + "," +
-                    dataset.name + "\n"
+                    dataset.name + "," +
+                    str(data_augmentation) + "," +
+                    str(self.save_transformed_data_to_disk) + "," +
+                    str(self.transformed_data_path) + "\n"
                 )
 
         with open(self.condor_tmp_path + "/task_params.txt", 'w') as f:
             f.write(params)
             f.close()
-            
+        
         self._write_condor_task_sub(self.submission_params)
         os.system("condor_submit " + self.condor_tmp_path + "/task.sub")
 
@@ -125,7 +147,7 @@ class Launcher:
                 file_str = ( f"""
                     batch_name \t = {condor_params.batch_name}
                     executable \t  = {python_path}
-                    arguments \t  = {thread_path} $(dataset_path) $(method_path) $(cv_path) $(seed) $(overwrite_methods) $(overwrite_preds) $(predict_on_train) $(save_fitted_methods) $(job_output_path) $(results_path) $(dataset_name)
+                    arguments \t  = {thread_path} $(dataset_path) $(method_path) $(cv_path) $(seed) $(overwrite_methods) $(overwrite_preds) $(predict_on_train) $(save_fitted_methods) $(job_output_path) $(results_path) $(dataset_name) $(augmentate_data) $(save_transformer_data_to_disk) $(is_time_series_data)
                     getenv \t  = {str(condor_params.getenv)}
                     output \t  =   {output_path}/$(job_output_path)_out.out
                     error \t  =   {output_path}/$(job_output_path)_error.err
@@ -135,7 +157,7 @@ class Launcher:
                     request_GPUs \t  =   {str(condor_params.request_GPUs)}
                     request_memory \t  =   {condor_params.request_memory}
                     requirements \t  =   {condor_params.requirements}
-                    queue dataset_path, method_path, cv_path, seed, overwrite_methods, overwrite_preds, predict_on_train, save_fitted_methods, job_output_path, results_path, dataset_name from {self.condor_tmp_path}/task_params.txt
+                    queue dataset_path, method_path, cv_path, seed, overwrite_methods, overwrite_preds, predict_on_train, save_fitted_methods, job_output_path, results_path, dataset_name, augmentate_data, save_transformer_data_to_disk, is_time_series_data from {self.condor_tmp_path}/task_params.txt
                 """
                 )
                 f.write(file_str)
