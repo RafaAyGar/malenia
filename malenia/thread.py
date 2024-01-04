@@ -4,9 +4,9 @@ from logging import StreamHandler, getLogger
 
 import numpy as np
 from joblib import dump, load
+from malenia.internal_cv_extractor import extract_internal_cv_results
+from malenia.save_and_load import save_cv_results, save_method, save_predictions
 from pandas import Timestamp
-
-from malenia.save_and_load import save_method, save_predictions
 
 ## Uncomment when using sktime-dl methods
 # sys.path.append("/home/rayllon/GitHub/sktime-dl")
@@ -34,6 +34,7 @@ dataset_name = str(sys.argv[11]).strip()
 data_aug_path = str(sys.argv[12]).strip()
 save_transformed_data_to_disk = str(sys.argv[13]).strip()
 transformed_data_path = str(sys.argv[14]).strip()
+do_save_cv_results = eval(sys.argv[15])
 
 
 ### Load Dataset
@@ -190,6 +191,16 @@ if save_fitted_strategies:
     except Exception as e:
         log.warning("ERROR SAVING method!")
         log.warning(f"SAVING method ERROR - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}")
+#
+###
+
+
+### Save CV results to disk if required
+##
+#
+if do_save_cv_results:
+    cv_results = extract_internal_cv_results(method)
+    save_cv_results(cv_results, job_info, results_path)
 #
 ###
 

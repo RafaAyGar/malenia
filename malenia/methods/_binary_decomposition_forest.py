@@ -4,17 +4,22 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 class OBDForest(BaseEstimator, ClassifierMixin):
-    def __init__(self, base_estimator=None, random_state=None):
+    def __init__(self, base_estimator=None, random_state=None, **base_estimator_params):
         self.base_estimator = base_estimator
         self.random_state = random_state
+        self.base_estimator_params = base_estimator_params
+
+        if self.base_estimator is None:
+            self.base_estimator = RandomForestClassifier(
+                random_state=self.random_state, **self.base_estimator_params
+            )
 
     def fit(self, X, y=None):
         self.classes_ = np.unique(y)
         self.n_instances_ = X.shape[0]
         self.n_classes_ = len(self.classes_)
 
-        if self.base_estimator is None:
-            self.base_estimator = RandomForestClassifier(random_state=self.random_state)
+        print("Base estimator:", self.base_estimator)
 
         y = y.astype(int)
 
@@ -45,3 +50,10 @@ class OBDForest(BaseEstimator, ClassifierMixin):
         final_probas[:, -1] = pred_cumprobas_bd[:, -1]
 
         return final_probas
+
+    def get_params(self, deep=True):
+        params = {"base_estimator": self.base_estimator}
+        if deep:
+            params.update(self.base_estimator.get_params(deep=True))
+        # params.update(self.base_estimator_params)
+        return params

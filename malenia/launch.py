@@ -1,9 +1,8 @@
 import os
 import sys
 
-from joblib import dump
-
 import malenia
+from joblib import dump
 
 
 def get_data_aug_name(data_aug_object):
@@ -77,6 +76,7 @@ class Launcher:
         predict_on_train=False,
         save_fitted_methods=False,
         overwrite_fitted_methods=False,
+        do_save_cv_results=False,
     ):
         params = ""
         for dataset in self.datasets:
@@ -151,6 +151,8 @@ class Launcher:
                     + str(self.save_transformed_data_to_disk)
                     + ","
                     + str(self.transformed_data_path)
+                    + ","
+                    + str(do_save_cv_results)
                     + "\n"
                 )
 
@@ -181,7 +183,7 @@ class Launcher:
             file_str = f"""
                     batch_name \t = {condor_params.batch_name}
                     executable \t  = {python_path}
-                    arguments \t  = {thread_path} $(dataset_path) $(method_path) $(cv_path) $(seed) $(overwrite_methods) $(overwrite_preds) $(predict_on_train) $(save_fitted_methods) $(job_output_path) $(results_path) $(dataset_name) $(augmentate_data) $(save_transformer_data_to_disk) $(is_time_series_data)
+                    arguments \t  = {thread_path} $(dataset_path) $(method_path) $(cv_path) $(seed) $(overwrite_methods) $(overwrite_preds) $(predict_on_train) $(save_fitted_methods) $(job_output_path) $(results_path) $(dataset_name) $(augmentate_data) $(save_transformer_data_to_disk) $(transformed_data_path) $(do_save_cv_results)
                     getenv \t  = {str(condor_params.getenv)}
                     output \t  =   {output_path}/$(job_output_path)_out.out
                     error \t  =   {output_path}/$(job_output_path)_error.err
@@ -191,7 +193,7 @@ class Launcher:
                     request_GPUs \t  =   {str(condor_params.request_GPUs)}
                     request_memory \t  =   {condor_params.request_memory}
                     requirements \t  =   {condor_params.requirements}
-                    queue dataset_path, method_path, cv_path, seed, overwrite_methods, overwrite_preds, predict_on_train, save_fitted_methods, job_output_path, results_path, dataset_name, augmentate_data, save_transformer_data_to_disk, is_time_series_data from {self.condor_tmp_path}/task_params.txt
+                    queue dataset_path, method_path, cv_path, seed, overwrite_methods, overwrite_preds, predict_on_train, save_fitted_methods, job_output_path, results_path, dataset_name, augmentate_data, save_transformer_data_to_disk, transformed_data_path, do_save_cv_results from {self.condor_tmp_path}/task_params.txt
                 """
             f.write(file_str)
             f.close()

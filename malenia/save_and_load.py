@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import pandas as pd
-from joblib import dump, load
+from joblib import dump
 
 
 def get_job_path(job_info, results_path):
@@ -60,3 +60,10 @@ def save_predictions(
         }
     )
     preds.to_csv(path, index=False)
+
+
+def save_cv_results(cv_results, job_info, results_path):
+    path = get_job_path(job_info, results_path) + "cv_results.csv"
+    if not os.path.exists(os.path.dirname(path)):
+        os.makedirs(os.path.dirname(path))
+    pd.DataFrame(cv_results).to_csv(path, index=False)

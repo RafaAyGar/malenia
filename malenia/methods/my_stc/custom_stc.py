@@ -3,11 +3,10 @@ from aeon.base._base import _clone_estimator
 from aeon.classification.shapelet_based import ShapeletTransformClassifier
 from aeon.classification.sklearn import RotationForestClassifier
 from aeon.utils.validation.panel import check_X_y
-from sklearn.model_selection import cross_val_predict
-from sklearn.pipeline import Pipeline
-
 from malenia.methods._base_saver_transformer import BaseSaveLoadTransformation
 from malenia.methods.my_stc.custom_rst import CustomRandomShapeletTransform
+from sklearn.model_selection import cross_val_predict
+from sklearn.pipeline import Pipeline
 
 
 class CustomShapeletTransformClassifier(ShapeletTransformClassifier, BaseSaveLoadTransformation):
