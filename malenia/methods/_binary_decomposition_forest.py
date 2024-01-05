@@ -55,5 +55,15 @@ class OBDForest(BaseEstimator, ClassifierMixin):
         params = {"base_estimator": self.base_estimator}
         if deep:
             params.update(self.base_estimator.get_params(deep=True))
-        # params.update(self.base_estimator_params)
+        params.update(self.base_estimator_params)
         return params
+
+    def set_params(self, **params):
+        super().set_params(**params)
+        base_estimator_params_to_set = {}
+        base_estimator_params = self.base_estimator.get_params(deep=True)
+        for k, v in params.items():
+            if k in base_estimator_params:
+                base_estimator_params_to_set[k] = v
+        self.base_estimator.set_params(**base_estimator_params_to_set)
+        return self
