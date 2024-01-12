@@ -1,0 +1,26 @@
+[project]
+name = "malenia"
+version = "0.0.1"
+authors = [
+  { name="Rafael Ayllón Gavilán", email="rafaaylloningeniero@gmail.com" },
+]
+description = "Machine Learning Automation package for experiments launching and results collection"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy",
+    "pandas",
+    "joblib",
+    "scikit-learn",
+    "matplotlib",
+    "scipy",
+]
+
+[project.urls]
+Homepage = "https://github.com/RafaAyGar/malenia"
+Issues = "https://github.com/RafaAyGar/malenia/issues"
