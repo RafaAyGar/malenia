@@ -19,6 +19,7 @@ dependencies = [
     "scikit-learn",
     "matplotlib",
     "scipy",
+    "aeon",
 ]
 
 [project.urls]
