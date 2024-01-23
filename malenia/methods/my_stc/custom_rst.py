@@ -84,8 +84,8 @@ class CustomRandomShapeletTransform(RandomShapeletTransform):
 
         return np.round(quality, 8), length, position, channel, inst_idx, cls_idx
 
+    # @njit(fastmath=True, cache=True)
     @staticmethod
-    @njit(fastmath=True, cache=True)
     def _find_shapelet_quality(
         X,
         y,
@@ -102,6 +102,7 @@ class CustomRandomShapeletTransform(RandomShapeletTransform):
     ):
         # This is slow and could be optimised, we spend 99% of time here
         orderline = []
+        orderline_ordinal = []
         this_cls_traversed = 0
         other_cls_traversed = 0
 
@@ -119,9 +120,12 @@ class CustomRandomShapeletTransform(RandomShapeletTransform):
             else:
                 cls = -1
                 other_cls_traversed += 1
-
             orderline.append((distance, cls))
             orderline.sort()
+
+            cls_ordinal = abs(y[i] - y[inst_idx])
+            orderline_ordinal.append((distance, cls_ordinal))
+            orderline_ordinal.sort()
 
             # if worst_quality > 0:
             #     quality = _calc_early_binary_ig(
@@ -135,35 +139,33 @@ class CustomRandomShapeletTransform(RandomShapeletTransform):
 
             #     if quality <= worst_quality:
             #         return -1
+
+        orderline = np.array(orderline)
+        orderline = orderline.astype(np.float64)
+
+        orderline_ordinal = np.array(orderline_ordinal)
+        orderline_ordinal = orderline_ordinal.astype(np.float64)
+
         if shapelet_quality_measure == "ig":
             quality = _calc_binary_ig(orderline, this_cls_count, other_cls_count)
         elif shapelet_quality_measure == "r2":
-            quality = _calc_correlation(orderline, y[inst_idx], l_norm=1)
+            quality = _calc_r2(orderline_ordinal, y[inst_idx], l_norm=1)
         elif shapelet_quality_measure == "spearman":
-            quality = _calc_spearman(orderline)  # , y[inst_idx])
+            quality = _calc_spearman(orderline_ordinal)
         elif shapelet_quality_measure == "fisher":
-            quality = _calc_fisher(orderline)  # , y[inst_idx])
+            quality = _calc_fisher(orderline)
         else:
-            quality = None  # can't rise an error here in njit
+            quality = None  # can't raise an error here in njit
 
         return round(quality, 12)
 
 
 @njit(fastmath=True, cache=True)
-def _calc_correlation(orderline, shp_class, l_norm):
-    orderline = np.array(orderline)
-
+def _calc_r2(orderline):
     if np.all(orderline[:, 0] == orderline[0, 0]):
         r_value = 0
     else:
-        # Numpy calculation
-        r_value = np.corrcoef(
-            orderline[:, 0], np.power(np.abs(orderline[:, 1] - shp_class), l_norm)
-        )
-        # Scipy calculation
-        # _, _, r_value, _, _ = linregress(
-        #     orderline[:, 0], np.power(np.abs(orderline[:, 1] - shp_class), l_norm)
-        # )
+        r_value = np.corrcoef(orderline[:, 0], orderline[:, 1])
         r_value = 0.0 if np.isnan(r_value[0, 1]) else r_value[0, 1]
 
     return r_value**2
@@ -180,7 +182,6 @@ def _rankdata(arr):
 
 @njit(fastmath=True, cache=True)
 def _calc_spearman(orderline):
-    orderline = np.array(orderline)
     x = orderline[:, 0]
 
     if np.all(x == x[0]):
@@ -202,7 +203,6 @@ def _calc_spearman(orderline):
 
 @njit
 def _calc_fisher(orderline):
-    orderline = np.array(orderline)
     distances = orderline[:, 0]
 
     if np.all(distances == distances[0]):
@@ -232,36 +232,3 @@ def _calc_fisher(orderline):
         return 0.0  # Handle the case where the denominator is zero
     else:
         return numerator / ((n_unique_labels - 1) * denominator)
-
-
-# @njit(fastmath=True, cache=True)
-# def _calc_fisher(orderline):
-#     orderline = np.array(orderline)
-#     distances = orderline[:, 0]
-#     if np.all(distances == distances[0]):
-#         return 0.0
-
-#     labels = orderline[:, 1]
-
-#     unique_labels, _ = np.unique(labels)
-#     n_unique_labels = np.array(unique_labels).shape[0]
-
-#     label_means = np.array(
-#         [np.mean(distances[labels == label]) for label in unique_labels]
-#     )
-#     label_stddevs = np.array(
-#         [np.std(distances[labels == label]) for label in unique_labels]
-#     )
-
-#     mean_diff_matrix = np.abs(label_means[:, None] - label_means)
-
-#     label_diff_matrix = np.abs(unique_labels[:, None] - unique_labels)
-
-#     numerator = np.sum(label_diff_matrix * mean_diff_matrix**2)
-
-#     denominator = np.sum(label_stddevs)
-
-#     if denominator == 0:
-#         return 0.0  # Handle the case where the denominator is zero
-#     else:
-#         return numerator / ((n_unique_labels - 1) * denominator)
