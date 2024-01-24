@@ -3,6 +3,7 @@ import sys
 from logging import StreamHandler, getLogger
 
 import numpy as np
+import sklearn
 from joblib import dump, load
 from pandas import Timestamp
 
@@ -69,9 +70,14 @@ if requiring_transformed_data:
 #
 # Check that method random state is equal to fold. This must be always true
 #
-assert (
-    method.random_state == fold
-), f"Method random state (= {method.random_state}) must be equal to fold (= {fold})"
+if isinstance(method, sklearn.model_selection.GridSearchCV):
+    assert (
+        method.estimator.random_state == fold
+    ), f"Method random state (= {method.random_state}) must be equal to fold (= {fold})"
+else:
+    assert (
+        method.random_state == fold
+    ), f"Method random state (= {method.random_state}) must be equal to fold (= {fold})"
 #
 ###
 
@@ -190,9 +196,9 @@ if save_fitted_strategies:
     try:
         save_method(method, job_info, results_path)
     except Exception as e:
-        log.warning("ERROR SAVING method!")
+        log.warning("** Could not save method binary!")
         log.warning(
-            f"SAVING method ERROR - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}"
+            f"** Saving method error - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}"
         )
 #
 ###
@@ -206,10 +212,7 @@ if do_save_cv_results:
     if cv_results is not None:
         save_cv_results(cv_results, job_info, results_path)
     else:
-        log.warning("ERROR SAVING cv_results!")
-        log.warning(
-            f"SAVING cv_results ERROR - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}"
-        )
+        log.warning("** Could not save method CV results!")
 #
 ###
 
@@ -300,7 +303,7 @@ try:
     log.warning(f"Done! - Fit {job_info} saved!")
 except Exception as e:
     log.warning(
-        f"SAVING PREDICTIONS ERROR - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}"
+        f"** Could not save predictions - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}"
     )
 #
 ###
