@@ -3,15 +3,13 @@ import pandas as pd
 from malenia.results.plots.cdd import get_rankings
 
 
-def export_results_by_dataset_metric_to_latex(
+def export_results_method_to_latex(
     results,
     metrics="all",
     greaterIsBetter=True,
     means=None,
-    stds_added=None,
     filename=None,
 ):
-
     if metrics == "all":
         metrics = list(results.metrics.keys())
 
@@ -48,8 +46,13 @@ def export_results_by_dataset_metric_to_latex(
             latex.loc[stds["method"] == method, metric] = f"${mean}_{'{' + std + '}'}$"
 
         # Find the best and second-best methods for the current dataset
-        best_method = means[metric].argmin()
-        second_best_method = means.drop(best_method)[metric].idxmin()
+
+        if greaterIsBetter:
+            best_method = means[metric].argmax()
+            second_best_method = means.drop(best_method)[metric].idxmax()
+        else:
+            best_method = means[metric].argmin()
+            second_best_method = means.drop(best_method)[metric].idxmin()
 
         best_mean = str(means[metric].iloc[best_method]).ljust(
             results.rounding_decimals + 2, "0"
