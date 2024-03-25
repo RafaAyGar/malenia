@@ -2,6 +2,7 @@ LICENSE
 README.md
 pyproject.toml
 malenia/__init__.py
+malenia/base_saver_transformer.py
 malenia/cv.py
 malenia/dataset.py
 malenia/internal_cv_extractor.py
@@ -18,6 +19,9 @@ malenia.egg-info/SOURCES.txt
 malenia.egg-info/dependency_links.txt
 malenia.egg-info/requires.txt
 malenia.egg-info/top_level.txt
+malenia/clustering/clustering_aux.py
+malenia/clustering/clustering_launch.py
+malenia/clustering/clustering_thread.py
 malenia/data_augmentation/__init__.py
 malenia/data_augmentation/_utils.py
 malenia/data_augmentation/aug.py
@@ -26,21 +30,6 @@ malenia/feature_selection/__init__.py
 malenia/feature_selection/_utils.py
 malenia/feature_selection/feature_importance.py
 malenia/feature_selection/feature_selector.py
-malenia/methods/__init__.py
-malenia/methods/_base_saver_transformer.py
-malenia/methods/_binary_decomposition_forest.py
-malenia/methods/_custom_logistic_at.py
-malenia/methods/_custom_logistic_at_test.py
-malenia/methods/_ordinal_random_forest.py
-malenia/methods/my_stc/custom_rst.py
-malenia/methods/my_stc/custom_stc.py
-malenia/methods/my_stc/main.py
-malenia/methods/my_stc/my_random_st_debugging.py
-malenia/methods/my_stc/my_stc.py
-malenia/methods/my_stc/random_dilated_st.py
-malenia/methods/my_stc/_old/my_random_st copy.py
-malenia/methods/my_stc/_old/my_random_st_aeon.py
-malenia/methods/my_stc/_old/my_st.py
 malenia/results/__init__.py
 malenia/results/results.py
 malenia/results/_tests/results_test.py
