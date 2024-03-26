@@ -19,6 +19,7 @@ malenia.egg-info/SOURCES.txt
 malenia.egg-info/dependency_links.txt
 malenia.egg-info/requires.txt
 malenia.egg-info/top_level.txt
+malenia/clustering/__init__.py
 malenia/clustering/clustering_aux.py
 malenia/clustering/clustering_launch.py
 malenia/clustering/clustering_thread.py

@@ -84,7 +84,7 @@ class ClusteringLauncher:
                     results_filename,
                 )
                 if (
-                    os.path.exists(results_path + "_clusters.csv")
+                    os.path.exists(results_path + "__clusters.csv")
                     and overwrite_predictions == False
                 ):
                     print(f"SKIPPING - {results_path} already exists")
@@ -136,9 +136,7 @@ class ClusteringLauncher:
 
         # get python environment path
         python_path = sys.executable
-        thread_path = os.path.join(
-            malenia.__path__[0], "clustering/clustering_thread.py"
-        )
+        thread_path = os.path.join(malenia.__path__[0], "clustering/clustering_thread.py")
         if not os.path.exists(thread_path):
             raise Exception("thread.py not found in", thread_path)
 

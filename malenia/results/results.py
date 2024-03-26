@@ -7,13 +7,23 @@ from sklearn.metrics import recall_score
 
 
 class Results:
-    def __init__(self, datasets, methods, metrics, results_path, seeds=30, rounding_decimals=4):
+    def __init__(
+        self,
+        datasets,
+        methods,
+        metrics,
+        results_path,
+        seeds=30,
+        rounding_decimals=4,
+        filename_sufix="_test",
+    ):
         self.datasets = datasets
         self.methods = methods
         self.metrics = metrics
         self.results_path = results_path
         self.seeds = seeds
         self.rounding_decimals = rounding_decimals
+        self.filename_sufix = filename_sufix
 
         self.results = {
             "dataset": [],
@@ -50,7 +60,7 @@ class Results:
                     global_method_name,
                     specif_method_name,
                     specified_dataset,
-                    "seed_" + str(seed) + "_" + "test" + ".csv",
+                    "seed_" + str(seed) + self.filename_sufix + ".csv",
                 )
                 yield (specified_dataset, seed, path_test)
 
@@ -88,7 +98,9 @@ class Results:
         return is_equal
 
     def evaluate(self, verbose=True, evaluations_binaries_folder=None):
-        trying_to_load_or_save_evaluated_results_binaries = not evaluations_binaries_folder is None
+        trying_to_load_or_save_evaluated_results_binaries = (
+            not evaluations_binaries_folder is None
+        )
 
         if trying_to_load_or_save_evaluated_results_binaries:
             if not os.path.exists(evaluations_binaries_folder):
@@ -161,9 +173,9 @@ class Results:
                 ###
                 ## Compute per class predictions
                 #
-                self.per_class_predictions[
-                    method_pretty + "_" + dataset
-                ] = self._get_per_class_predictions(y_true, y_pred)
+                self.per_class_predictions[method_pretty + "_" + dataset] = (
+                    self._get_per_class_predictions(y_true, y_pred)
+                )
                 ###
 
                 ###
@@ -202,7 +214,9 @@ class Results:
                 if n_classes not in self.per_class_recall[method_pretty]:
                     self.per_class_recall[method_pretty][n_classes] = [per_class_recall_detail]
                 else:
-                    self.per_class_recall[method_pretty][n_classes].append(per_class_recall_detail)
+                    self.per_class_recall[method_pretty][n_classes].append(
+                        per_class_recall_detail
+                    )
                 ###
 
                 ###
@@ -228,7 +242,9 @@ class Results:
         ## Average per class recall
         #
         for method_pretty, method_info in self.methods.items():
-            for n_classes, per_class_recall_detail in self.per_class_recall[method_pretty].items():
+            for n_classes, per_class_recall_detail in self.per_class_recall[
+                method_pretty
+            ].items():
                 try:
                     self.per_class_recall[method_pretty][n_classes] = np.mean(
                         per_class_recall_detail, axis=0
@@ -266,7 +282,9 @@ class Results:
         for method_pretty, method_info in self.methods.items():
             missing_results[method_pretty] = dict()
             method_real = method_info
-            for dataset, seed, results_path in self._method_results_info_generator(method_real):
+            for dataset, seed, results_path in self._method_results_info_generator(
+                method_real
+            ):
                 if os.path.exists(results_path) == False:
                     if dataset in missing_results[method_pretty]:
                         missing_results[method_pretty][dataset] += 1
@@ -286,7 +304,9 @@ class Results:
                 if strat1 == strat2:
                     win_losses.append("---")
                     continue
-                s2 = results_by_method[results_by_method["method"] == strat2][metric_name].values
+                s2 = results_by_method[results_by_method["method"] == strat2][
+                    metric_name
+                ].values
                 w = 0
                 l = 0
                 t = 0
@@ -319,7 +339,9 @@ class Results:
             results_by_method_dataset = self.results_by_method_dataset
 
         df = results_by_method_dataset.sort_values(["dataset", "method"])
-        results_by_methods_dataset_metric = df[df["method"] == self.methods_real_names[0]].copy()
+        results_by_methods_dataset_metric = df[
+            df["method"] == self.methods_real_names[0]
+        ].copy()
         for pretty_method_name in self.methods.keys():
             method_results = list(df[df["method"] == pretty_method_name][metric])
             results_by_methods_dataset_metric[pretty_method_name] = method_results
@@ -333,8 +355,8 @@ class Results:
         )
         final_results_by_methods_dataset_metric.sort_values(by=["dataset"])
         final_results_by_methods_dataset_metric.set_index("dataset", inplace=True)
-        final_results_by_methods_dataset_metric = final_results_by_methods_dataset_metric.round(
-            self.rounding_decimals
+        final_results_by_methods_dataset_metric = (
+            final_results_by_methods_dataset_metric.round(self.rounding_decimals)
         )
         return final_results_by_methods_dataset_metric
 

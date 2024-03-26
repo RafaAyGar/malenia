@@ -3,11 +3,11 @@ import sys
 from logging import StreamHandler, getLogger
 
 import numpy as np
+import pandas as pd
 from joblib import load
 from pandas import Timestamp
 
-from malenia.clustering.clustering_aux import (save_final_cluster_distances,
-                                               save_predictions)
+from malenia.clustering.clustering_aux import save_final_cluster_distances, save_predictions
 
 ## Uncomment when using sktime-dl methods
 # sys.path.append("/home/rayllon/GitHub/sktime-dl")
@@ -86,25 +86,56 @@ del y_train, y_test
 
 ## Set number of clusters
 #
-method_clus.n_clusters = len(np.unique(y))
 
 
-### Fit and Predict on test
-##
-#
-fit_estimator_start_time = Timestamp.now()
-y_pred = method_clus.fit_predict(X)
-fit_estimator_end_time = Timestamp.now()
-del X
-
-
-### Post-hoc label the clusters with given method
-##
-#
-if not method_posthoc is None:
-    y_pred, y_pred_reverse = method_posthoc(y_pred, method_clus.final_cluster_dist)
+if type(method_clus) is str:
+    ### Load clusters and distances from disk
+    ##
+    #
+    saved_clusters_fold = 0
+    # Find the fold of the saved clusters (usually is zero as clustering methods
+    # doesn't have a stochastic component)
+    if os.path.exists(os.path.join(method_clus, dataset_name, f"seed_{fold}__clusters.csv")):
+        saved_clusters_fold = fold
+    else:
+        saved_clusters_fold = 0
+    # Load clusters and distances
+    clusters_path = os.path.join(
+        method_clus, dataset_name, f"seed_{saved_clusters_fold}__clusters.csv"
+    )
+    distances_path = os.path.join(
+        method_clus,
+        dataset_name,
+        f"seed_{saved_clusters_fold}__final_clusters_dist.npy",
+    )
+    clusters_results = pd.read_csv(clusters_path)
+    clusters = clusters_results["y_pred"]
+    final_cluster_dist = np.load(distances_path)
+    clustering_start_time = clusters_results["clustering_start_time"]
+    clustering_end_time = clusters_results["clustering_end_time"]
 else:
-    y_pred_reverse = None
+    ### Fit and Predict on test and get clusters and distances
+    ##
+    #
+    method_clus.n_clusters = len(np.unique(y))
+    clustering_start_time = Timestamp.now()
+    clusters = method_clus.fit_predict(X)
+    clustering_end_time = Timestamp.now()
+    final_cluster_dist = method_clus.final_cluster_dist
+    del X, method_clus
+
+
+### Post-hoc label the clusters with given method (if required)
+##
+#
+if method_posthoc is None:
+    clusters_reverse = None
+    posthoc_end_time = Timestamp.now()
+    posthoc_start_time = Timestamp.now()
+else:
+    posthoc_start_time = Timestamp.now()
+    clusters, clusters_reverse = method_posthoc(clusters, final_cluster_dist)
+    posthoc_end_time = Timestamp.now()
 
 ### Save predictions
 ##
@@ -112,27 +143,31 @@ else:
 try:
     save_predictions(
         y_true=y,
-        y_pred=y_pred,
-        y_pred_reverse=y_pred_reverse,
-        fit_estimator_start_time=fit_estimator_start_time,
-        fit_estimator_end_time=fit_estimator_end_time,
+        y_pred=clusters,
+        y_pred_reverse=clusters_reverse,
+        clustering_start_time=clustering_start_time,
+        clustering_end_time=clustering_end_time,
+        posthoc_start_time=posthoc_start_time,
+        posthoc_end_time=posthoc_end_time,
         job_info=job_info,
         results_path=results_path,
     )
     log.warning(f"Done! - Fit {job_info} saved!")
 except Exception as e:
     log.warning(
-        f"** Could not save predictions - "
-        f"Fit - {job_info} - "
-        f"* EXCEPTION: \n{e}"
+        f"** Could not save predictions - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}"
     )
 #
 ###
 
+
+### Save final cluster distances
+##
+#
 if do_save_final_cluster_distances:
     try:
         save_final_cluster_distances(
-            final_cluster_distances=method_clus.final_cluster_dist,
+            final_cluster_distances=final_cluster_dist,
             job_info=job_info,
             results_path=results_path,
         )
