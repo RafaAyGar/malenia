@@ -5,9 +5,8 @@ from logging import StreamHandler, getLogger
 import numpy as np
 import pandas as pd
 from joblib import load
-from pandas import Timestamp
-
 from malenia.clustering.clustering_aux import save_final_cluster_distances, save_predictions
+from pandas import Timestamp
 
 ## Uncomment when using sktime-dl methods
 # sys.path.append("/home/rayllon/GitHub/sktime-dl")
@@ -80,6 +79,7 @@ if hasattr(X_train, "reset_index"):
 X = np.concatenate((X_train, X_test))
 del X_train, X_test
 y = np.concatenate((y_train, y_test))
+y = y.astype(int)
 del y_train, y_test
 
 ###
@@ -134,7 +134,7 @@ if method_posthoc is None:
     posthoc_start_time = Timestamp.now()
 else:
     posthoc_start_time = Timestamp.now()
-    clusters, clusters_reverse = method_posthoc(clusters, final_cluster_dist)
+    clusters, clusters_reverse = method_posthoc(clusters, final_cluster_dist, y)
     posthoc_end_time = Timestamp.now()
 
 ### Save predictions
