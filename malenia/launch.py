@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -58,7 +59,9 @@ class Launcher:
         method_name_global = method_name.split("_")[0]
         method_full_name = method_name.split("_seed")[0]
 
-        if method_name_global == method_full_name:  # if the specific method name is not specified
+        if (
+            method_name_global == method_full_name
+        ):  # if the specific method name is not specified
             method_name_specific = "Default"
             seed = method_name.split("_seed")[1]
         else:
@@ -66,7 +69,9 @@ class Launcher:
             for part in method_name.split("_")[1:]:
                 method_name_specif_with_seed += part + "_"
             method_name_specific = method_name_specif_with_seed.split("_seed")[0]
-            seed = method_name_specif_with_seed.split("_seed")[1][:-1]  # [:-1] to remove last "_"
+            seed = method_name_specif_with_seed.split("_seed")[1][
+                :-1
+            ]  # [:-1] to remove last "_"
 
         return method_name_global, method_name_specific, seed
 
@@ -81,6 +86,7 @@ class Launcher:
         params = ""
         for dataset in self.datasets:
             dataset_path = self._dump_in_condor_tmp_path(dataset.name, dataset)
+            method_info_saved = False
             for method_name, method in self.methods.items():
                 (
                     method_name_global,
@@ -135,11 +141,11 @@ class Launcher:
                     + str(save_fitted_methods)
                     + ","
                     + str(method_name_global)
-                    + "__"
+                    + "___"
                     + str(method_name_specif)
-                    + "__"
+                    + "___"
                     + str(dataset.name)
-                    + "__"
+                    + "___"
                     + seed
                     + ","
                     + self.results_path
@@ -155,6 +161,50 @@ class Launcher:
                     + str(do_save_cv_results)
                     + "\n"
                 )
+                method_results_path = os.path.join(
+                    self.results_path,
+                    method_name_global,
+                    method_name_specif,
+                    # ,
+                )
+                if not os.path.exists(
+                    os.path.join(
+                        method_results_path,
+                        f"{method_name_global}_{method_name_specif}_attributes.json",
+                    )
+                ):
+                    attributes_dict = vars(method).copy()
+                    attributes_dict.pop("random_state", None)
+
+                    if not os.path.exists(method_results_path):
+                        os.makedirs(method_results_path)
+
+                    # Write dictionary to a JSON file
+                    with open(
+                        os.path.join(
+                            method_results_path,
+                            f"{method_name_global}_{method_name_specif}_attributes.json",
+                        ),
+                        "w",
+                    ) as json_file:
+                        json.dump(attributes_dict, json_file, indent=4)
+                else:
+                    # load attributes from json file
+                    with open(
+                        os.path.join(
+                            method_results_path,
+                            f"{method_name_global}_{method_name_specif}_attributes.json",
+                        ),
+                        "r",
+                    ) as json_file:
+                        attributes_dict = json.load(json_file)
+                        # Check if the attributes are the same
+                        new_method_attributes = vars(method).copy()
+                        new_method_attributes.pop("random_state", None)
+                        if attributes_dict != new_method_attributes:
+                            raise ValueError(
+                                f"\nERROR: Conflict in attributes for {method_name_global}_{method_name_specif}. Change specific method name or fix the attributes.\n"
+                            )
 
         with open(self.condor_tmp_path + "/task_params.txt", "w") as f:
             f.write(params)

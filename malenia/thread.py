@@ -5,10 +5,9 @@ from logging import StreamHandler, getLogger
 import numpy as np
 import sklearn
 from joblib import dump, load
-from pandas import Timestamp
-
 from malenia.internal_cv_extractor import extract_internal_cv_results
 from malenia.save_and_load import save_cv_results, save_method, save_predictions
+from pandas import Timestamp
 
 ## Uncomment when using sktime-dl methods
 # sys.path.append("/home/rayllon/GitHub/sktime-dl")
@@ -47,8 +46,8 @@ with open(dataset_path, "rb") as dataset_binary:
 #
 # Check if dataset has a load_crude() method
 #
-if not hasattr(dataset, "load_crude"):
-    raise ValueError(f"Dataset {dataset.name} must implement a load_crude() method")
+# if not hasattr(dataset, "load_crude"):
+#     raise ValueError(f"Dataset {dataset.name} must implement a load_crude() method")
 #
 ###
 
@@ -147,22 +146,62 @@ if (not transformed_data_train is None) and (not transformed_data_test is None):
 ### Load data, apply CV and reset indexes
 ##
 #
-if hasattr(cv, "apply"):
-    X_train, y_train, X_test, y_test = dataset.load_crude()
+if dataset.type == "time_series":
+    from aeon.datasets import load_from_tsfile
+
+    X_train, y_train = load_from_tsfile(
+        os.path.join(dataset.path, dataset.name) + f"/{dataset.name}_TRAIN.ts"
+    )
+    X_test, y_test = load_from_tsfile(
+        os.path.join(dataset.path, dataset.name) + f"/{dataset.name}_TEST.ts"
+    )
     X_train, y_train, X_test, y_test = cv.apply(X_train, y_train, X_test, y_test, fold)
-elif hasattr(cv, "get_fold_from_disk"):
-    X_train, y_train, X_test, y_test = cv.get_fold_from_disk(dataset, fold)
-    X_train = X_train.to_numpy()
-    X_test = X_test.to_numpy()
-    # The next thing is being printed for debugging purposes
-    print("X_train shape:", X_train.shape)
-    print("X_test shape:", X_test.shape)
+elif dataset.type == "orreview":
+    import pandas as pd
+
+    train = pd.read_csv(
+        os.path.join(dataset.path, dataset.name, f"train_{dataset.name}.{str(fold)}"),
+        sep=" ",
+        header=None,
+    )
+    test = pd.read_csv(
+        os.path.join(dataset.path, dataset.name, f"test_{dataset.name}.{str(fold)}"),
+        sep=" ",
+        header=None,
+    )
+    X_train = train.iloc[:, :-1]
+    y_train = train.iloc[:, -1]
+    del train
+    X_test = test.iloc[:, :-1]
+    y_test = test.iloc[:, -1]
+    del test
+elif dataset.type == "tabular_tsoc":
+    import pandas as pd
+
+    train = pd.read_csv(
+        os.path.join(dataset.path, dataset.name, f"{dataset.name}_TRAIN.csv"),
+    )
+    test = pd.read_csv(
+        os.path.join(dataset.path, dataset.name, f"{dataset.name}_TEST.csv"),
+    )
+    X_train = train.drop(columns=["target"])
+    y_train = train["target"]
+    del train
+    X_test = test.drop(columns=["target"])
+    y_test = test["target"]
+    del test
+    X_train, y_train, X_test, y_test = cv.apply(X_train, y_train, X_test, y_test, fold)
+
+
 #
 del cv
 #
 if hasattr(X_train, "reset_index"):
     X_train.reset_index(drop=True, inplace=True)
     X_test.reset_index(drop=True, inplace=True)
+if hasattr(y_train, "reset_index"):
+    y_train.reset_index(drop=True, inplace=True)
+    y_test.reset_index(drop=True, inplace=True)
 #
 ###
 
@@ -197,9 +236,7 @@ if save_fitted_strategies:
         save_method(method, job_info, results_path)
     except Exception as e:
         log.warning("** Could not save method binary!")
-        log.warning(
-            f"** Saving method error - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}"
-        )
+        log.warning(f"** Saving method error - " f"Fit - {job_info} - " f"* EXCEPTION: \n{e}")
 #
 ###
 
@@ -313,9 +350,7 @@ except Exception as e:
 ##
 #
 if save_transformed_data_to_disk != "None":
-    save_transformed_data_to_disk = os.path.join(
-        save_transformed_data_to_disk, dataset.name
-    )
+    save_transformed_data_to_disk = os.path.join(save_transformed_data_to_disk, dataset.name)
     if not os.path.exists(save_transformed_data_to_disk):
         os.makedirs(save_transformed_data_to_disk)
     # Save transformed data to sikd using pickle dump() function
@@ -323,9 +358,7 @@ if save_transformed_data_to_disk != "None":
         os.path.join(save_transformed_data_to_disk, f"train_fold_{fold}.pkl"), "wb"
     ) as f:
         dump(method.train_X_t__, f)
-    with open(
-        os.path.join(save_transformed_data_to_disk, f"test_fold_{fold}.pkl"), "wb"
-    ) as f:
+    with open(os.path.join(save_transformed_data_to_disk, f"test_fold_{fold}.pkl"), "wb") as f:
         dump(method.test_X_t__, f)
 #
 

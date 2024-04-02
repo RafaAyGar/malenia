@@ -6,7 +6,7 @@ from joblib import dump
 
 
 def get_job_path(job_info, results_path):
-    job_info = job_info.split("__")
+    job_info = job_info.split("___")
     for j in job_info:
         print("****", j)
     path = os.path.join(
