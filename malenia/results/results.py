@@ -38,6 +38,14 @@ class Results:
 
         if type(self.datasets) == str:
             self.datasets = os.listdir(self.datasets)
+        elif type(self.datasets) == list:
+            self.datasets = self.datasets
+        elif type(self.datasets) == dict:
+            datasets = []
+            for datasets_path in self.datasets.values():
+                dataset = os.listdir(datasets_path)
+                datasets += dataset
+            self.datasets = datasets
 
     def _extract_global_and_specific_method_name(self, method_name):
         method_name_global = method_name.split("_")[0]
