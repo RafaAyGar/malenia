@@ -1,3 +1,4 @@
+import json
 import os
 
 import numpy as np
@@ -37,15 +38,15 @@ class Results:
         self.per_class_recall = dict()
 
         if type(self.datasets) == str:
-            self.datasets = os.listdir(self.datasets)
+            self._datasets = os.listdir(self.datasets)
         elif type(self.datasets) == list:
-            self.datasets = self.datasets
+            self._datasets = self.datasets
         elif type(self.datasets) == dict:
             datasets = []
             for datasets_path in self.datasets.values():
                 dataset = os.listdir(datasets_path)
                 datasets += dataset
-            self.datasets = datasets
+            self._datasets = datasets
 
     def _extract_global_and_specific_method_name(self, method_name):
         method_name_global = method_name.split("_")[0]
@@ -61,7 +62,7 @@ class Results:
             global_method_name,
             specif_method_name,
         ) = self._extract_global_and_specific_method_name(method)
-        for specified_dataset in self.datasets:
+        for specified_dataset in self._datasets:
             for seed in range(self.seeds):
                 path_test = os.path.join(
                     self.results_path,
@@ -97,7 +98,7 @@ class Results:
 
     def _is_equal_to(self, other):
         is_equal = (
-            self.datasets == other.datasets
+            self._datasets == other.datasets
             and self.methods == other.methods
             and self.metrics.keys() == other.metrics.keys()
             and self.seeds == other.seeds
@@ -367,6 +368,23 @@ class Results:
             final_results_by_methods_dataset_metric.round(self.rounding_decimals)
         )
         return final_results_by_methods_dataset_metric
+
+    def get_mean_results_by_number_of_classes(self, metric):
+        datafolder = self.datasets.split("/")[-2]
+        results = self.get_results_by_dataset_metric("amae")
+        datasets_info_path = os.path.join("/home/rayllon/DATA", datafolder + "_info.json")
+        if not os.path.exists(datasets_info_path):
+            print("* Could not extract results by nº of classes!")
+        datasets_info = json.load(open(datasets_info_path))
+        datasets_info
+
+        for dataset in results.index:
+            results.loc[dataset, "Nº Classes"] = int(datasets_info[dataset]["n_classes"])
+        results["Nº Classes"] = results["Nº Classes"].astype(int)
+        results_by_classes = results.groupby("Nº Classes").mean()
+        results_by_classes["Nº Datasets per nº class"] = results.groupby("Nº Classes").size()
+
+        return results_by_classes
 
     def adrian_test_format_results(self, metric_file_dict):
         for metric, output_file in metric_file_dict.items():
