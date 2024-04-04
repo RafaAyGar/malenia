@@ -303,19 +303,18 @@ class Results:
         return missing_results
 
     def get_wins_ties_losses(self, metric_name):
-        win_tie_losses = pd.DataFrame()
-        results_by_method = self.get_results_by_method()
-        for strat1 in results_by_method["method"]:
+        results_by_method = self.get_results_by_dataset_metric(metric_name)
+        methods = results_by_method.columns.values
+        win_tie_losses = pd.DataFrame(index=methods)
+        for strat1 in methods:
             col = "VS " + strat1
-            s1 = results_by_method[results_by_method["method"] == strat1][metric_name].values
+            s1 = results_by_method[strat1].values
             win_losses = []
-            for strat2 in results_by_method["method"]:
+            for strat2 in methods:
                 if strat1 == strat2:
                     win_losses.append("---")
                     continue
-                s2 = results_by_method[results_by_method["method"] == strat2][
-                    metric_name
-                ].values
+                s2 = results_by_method[strat2].values
                 w = 0
                 l = 0
                 t = 0
@@ -371,7 +370,7 @@ class Results:
 
     def get_mean_results_by_number_of_classes(self, metric):
         datafolder = self.datasets.split("/")[-2]
-        results = self.get_results_by_dataset_metric("amae")
+        results = self.get_results_by_dataset_metric(metric)
         datasets_info_path = os.path.join("/home/rayllon/DATA", datafolder + "_info.json")
         if not os.path.exists(datasets_info_path):
             print("* Could not extract results by nº of classes!")
