@@ -368,7 +368,7 @@ class Results:
         )
         return final_results_by_methods_dataset_metric
 
-    def get_mean_results_by_number_of_classes(self, metric):
+    def get_mean_results_by_method_dataset_nclasses(self, metric):
         datafolder = self.datasets.split("/")[-2]
         results = self.get_results_by_dataset_metric(metric)
         datasets_info_path = os.path.join("/home/rayllon/DATA", datafolder + "_info.json")
@@ -380,8 +380,16 @@ class Results:
         for dataset in results.index:
             results.loc[dataset, "Nº Classes"] = int(datasets_info[dataset]["n_classes"])
         results["Nº Classes"] = results["Nº Classes"].astype(int)
-        results_by_classes = results.groupby("Nº Classes").mean()
-        results_by_classes["Nº Datasets per nº class"] = results.groupby("Nº Classes").size()
+        return results
+
+    def get_mean_results_by_method_nclasses(self, metric):
+        results_by_method_dataset_nclasses = self.get_mean_results_by_method_dataset_nclasses(
+            metric
+        )
+        results_by_classes = results_by_method_dataset_nclasses.groupby("Nº Classes").mean()
+        results_by_classes["Nº Datasets per nº class"] = (
+            results_by_method_dataset_nclasses.groupby("Nº Classes").size()
+        )
 
         return results_by_classes
 
