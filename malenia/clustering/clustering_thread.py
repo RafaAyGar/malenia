@@ -35,12 +35,6 @@ dataset_name = str(sys.argv[8]).strip()
 #
 with open(dataset_path, "rb") as dataset_binary:
     dataset = load(dataset_binary)
-#
-# Check if dataset has a load_crude() method
-#
-if not hasattr(dataset, "load_crude"):
-    raise ValueError(f"Dataset {dataset.name} must implement a load_crude() method")
-#
 ###
 
 
@@ -63,17 +57,58 @@ if hasattr(method_clus, "random_state"):
 ### Load data
 ##
 #
-# TSOC datasets
-X_train, y_train, X_test, y_test = dataset.load_crude()
+if dataset.type == "time_series":
+    from aeon.datasets import load_from_tsfile
+
+    X_train, y_train = load_from_tsfile(
+        os.path.join(dataset.path, dataset.name) + f"/{dataset.name}_TRAIN.ts"
+    )
+    X_test, y_test = load_from_tsfile(
+        os.path.join(dataset.path, dataset.name) + f"/{dataset.name}_TEST.ts"
+    )
+elif dataset.type == "orreview":
+    import pandas as pd
+
+    train = pd.read_csv(
+        os.path.join(dataset.path, dataset.name, f"train_{dataset.name}.{str(0)}"),
+        sep=" ",
+        header=None,
+    )
+    test = pd.read_csv(
+        os.path.join(dataset.path, dataset.name, f"test_{dataset.name}.{str(0)}"),
+        sep=" ",
+        header=None,
+    )
+    X_train = train.iloc[:, :-1]
+    y_train = train.iloc[:, -1]
+    del train
+    X_test = test.iloc[:, :-1]
+    y_test = test.iloc[:, -1]
+    del test
+elif dataset.type == "tabular_tsoc":
+    import pandas as pd
+
+    train = pd.read_csv(
+        os.path.join(dataset.path, dataset.name, f"{dataset.name}_TRAIN.csv"),
+    )
+    test = pd.read_csv(
+        os.path.join(dataset.path, dataset.name, f"{dataset.name}_TEST.csv"),
+    )
+    X_train = train.drop(columns=["target"])
+    y_train = train["target"]
+    del train
+    X_test = test.drop(columns=["target"])
+    y_test = test["target"]
+    del test
+
 del dataset
-# Orreview datasets
-# X_train, y_train, X_test, y_test = cv.get_fold_from_disk(dataset, fold)
-# X_train = X_train.to_numpy()
-# X_test = X_test.to_numpy()
 #
 if hasattr(X_train, "reset_index"):
     X_train.reset_index(drop=True, inplace=True)
     X_test.reset_index(drop=True, inplace=True)
+if hasattr(y_train, "reset_index"):
+    y_train.reset_index(drop=True, inplace=True)
+    y_test.reset_index(drop=True, inplace=True)
 #
 # Join X_train and X_test (numpy arrays)
 X = np.concatenate((X_train, X_test))
@@ -81,7 +116,10 @@ del X_train, X_test
 y = np.concatenate((y_train, y_test))
 y = y.astype(int)
 del y_train, y_test
-
+# check if data has nans
+if np.count_nonzero(np.isnan(X)) or np.count_nonzero(np.isnan(y)):
+    raise ValueError("Training data has nan values!")
+#
 ###
 
 ## Set number of clusters
@@ -95,18 +133,18 @@ if type(method_clus) is str:
     saved_clusters_fold = 0
     # Find the fold of the saved clusters (usually is zero as clustering methods
     # doesn't have a stochastic component)
-    if os.path.exists(os.path.join(method_clus, dataset_name, f"seed_{fold}__clusters.csv")):
+    if os.path.exists(os.path.join(method_clus, dataset_name, f"seed_{fold}_clusters.csv")):
         saved_clusters_fold = fold
     else:
         saved_clusters_fold = 0
     # Load clusters and distances
     clusters_path = os.path.join(
-        method_clus, dataset_name, f"seed_{saved_clusters_fold}__clusters.csv"
+        method_clus, dataset_name, f"seed_{saved_clusters_fold}_clusters.csv"
     )
     distances_path = os.path.join(
         method_clus,
         dataset_name,
-        f"seed_{saved_clusters_fold}__final_clusters_dist.npy",
+        f"seed_{saved_clusters_fold}_final_clusters_dist.npy",
     )
     clusters_results = pd.read_csv(clusters_path)
     clusters = clusters_results["y_pred"]

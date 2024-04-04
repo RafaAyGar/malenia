@@ -3,7 +3,6 @@ import os
 import numpy as np
 import pandas as pd
 from joblib import dump
-
 from malenia.save_and_load import get_job_path
 
 
@@ -18,7 +17,7 @@ def save_predictions(
     results_path,
     y_pred_reverse=None,
 ):
-    path = get_job_path(job_info, results_path) + "_clusters.csv"
+    path = get_job_path(job_info, results_path) + "clusters.csv"
 
     if not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -47,7 +46,7 @@ def save_final_cluster_distances(
     job_info,
     results_path,
 ):
-    path = get_job_path(job_info, results_path) + "_final_clusters_dist"
+    path = get_job_path(job_info, results_path) + "final_clusters_dist"
 
     if not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path), exist_ok=True)
