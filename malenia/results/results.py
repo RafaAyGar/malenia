@@ -11,6 +11,7 @@ class Results:
     def __init__(
         self,
         datasets,
+        excluded_datasets,
         methods,
         metrics,
         results_path,
@@ -19,6 +20,7 @@ class Results:
         filename_sufix="_test",
     ):
         self.datasets = datasets
+        self.excluded_datasets = excluded_datasets
         self.methods = methods
         self.metrics = metrics
         self.results_path = results_path
@@ -39,14 +41,19 @@ class Results:
 
         if type(self.datasets) == str:
             self._datasets = os.listdir(self.datasets)
-        elif type(self.datasets) == list:
-            self._datasets = self.datasets
+        # elif type(self.datasets) == list:
+        #     self._datasets = self.datasets
         elif type(self.datasets) == dict:
             datasets = []
             for datasets_path in self.datasets.values():
                 dataset = os.listdir(datasets_path)
                 datasets += dataset
             self._datasets = datasets
+
+        if not self.excluded_datasets is None:
+            self._datasets = [
+                dataset for dataset in self._datasets if dataset not in self.excluded_datasets
+            ]
 
     def _extract_global_and_specific_method_name(self, method_name):
         method_name_global = method_name.split("_")[0]
@@ -375,7 +382,6 @@ class Results:
         if not os.path.exists(datasets_info_path):
             print("* Could not extract results by nº of classes!")
         datasets_info = json.load(open(datasets_info_path))
-        datasets_info
 
         for dataset in results.index:
             results.loc[dataset, "Nº Classes"] = int(datasets_info[dataset]["n_classes"])
