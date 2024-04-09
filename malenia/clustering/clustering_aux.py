@@ -15,15 +15,15 @@ def save_predictions(
     posthoc_end_time,
     job_info,
     results_path,
-    y_pred_reverse=None,
+    # y_pred_reverse=None,
 ):
     path = get_job_path(job_info, results_path) + "clusters.csv"
 
     if not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
-    if y_pred_reverse is None:
-        y_pred_reverse = np.ones(y_pred.shape) * -1
+    # if y_pred_reverse is None:
+    #     y_pred_reverse = np.ones(y_pred.shape) * -1
 
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
@@ -31,7 +31,7 @@ def save_predictions(
         {
             "y_true": y_true,
             "y_pred": y_pred,
-            "y_pred_reverse": y_pred_reverse,
+            # "y_pred_reverse": y_pred_reverse,
             "clustering_start_time": clustering_start_time,
             "clustering_end_time": clustering_end_time,
             "posthoc_start_time": posthoc_start_time,

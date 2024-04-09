@@ -175,6 +175,20 @@ else:
     clusters, clusters_reverse = method_posthoc(clusters, final_cluster_dist, y)
     posthoc_end_time = Timestamp.now()
 
+
+### As in clustering we don't know the output label, we can't know if the ordering of the
+### clusters is the correct one. So we will compare the results with the reverse ordering.
+##
+#
+if clusters_reverse is not None:
+    from malenia.metrics import amae
+
+    print("Comparing clusters and clusters_reverse")
+    if amae(y, clusters_reverse) < amae(y, clusters):
+        print("Reverse clusters was selected")
+        clusters = clusters_reverse
+        clusters_reverse = None
+
 ### Save predictions
 ##
 #
@@ -182,7 +196,7 @@ try:
     save_predictions(
         y_true=y,
         y_pred=clusters,
-        y_pred_reverse=clusters_reverse,
+        # y_pred_reverse=clusters_reverse,
         clustering_start_time=clustering_start_time,
         clustering_end_time=clustering_end_time,
         posthoc_start_time=posthoc_start_time,
