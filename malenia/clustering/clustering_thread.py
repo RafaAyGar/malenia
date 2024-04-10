@@ -147,7 +147,7 @@ if type(method_clus) is str:
         f"seed_{saved_clusters_fold}_final_clusters_dist.npy",
     )
     clusters_results = pd.read_csv(clusters_path)
-    clusters = clusters_results["y_pred"]
+    clusters = clusters_results["y_pred"].to_numpy()
     final_cluster_dist = np.load(distances_path)
     clustering_start_time = clusters_results["clustering_start_time"]
     clustering_end_time = clusters_results["clustering_end_time"]
