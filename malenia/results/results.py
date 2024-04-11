@@ -49,6 +49,8 @@ class Results:
                 dataset = os.listdir(datasets_path)
                 datasets += dataset
             self._datasets = datasets
+        elif type(self.datasets) == list:
+            self._datasets = self.datasets
 
         if not self.excluded_datasets is None:
             self._datasets = [
