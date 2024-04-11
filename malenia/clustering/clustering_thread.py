@@ -159,7 +159,7 @@ else:
     clustering_start_time = Timestamp.now()
     clusters = method_clus.fit_predict(X)
     clustering_end_time = Timestamp.now()
-    final_cluster_dist = method_clus.final_cluster_dist
+    final_cluster_dist = method_clus.get_final_cluster_dist()
     del X, method_clus
 
 
