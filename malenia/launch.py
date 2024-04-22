@@ -1,9 +1,11 @@
 import json
+import math
 import os
 import sys
 
-import malenia
 from joblib import dump
+
+import malenia
 
 
 def get_data_aug_name(data_aug_object):
@@ -173,8 +175,7 @@ class Launcher:
                         f"{method_name_global}_{method_name_specif}_attributes.json",
                     )
                 ):
-                    attributes_dict = vars(method).copy()
-                    attributes_dict.pop("random_state", None)
+                    attributes_dict = _get_attributes_dict_from_method(method)
 
                     if not os.path.exists(method_results_path):
                         os.makedirs(method_results_path)
@@ -199,8 +200,7 @@ class Launcher:
                     ) as json_file:
                         attributes_dict = json.load(json_file)
                         # Check if the attributes are the same
-                        new_method_attributes = vars(method).copy()
-                        new_method_attributes.pop("random_state", None)
+                        new_method_attributes = _get_attributes_dict_from_method(method)
                         if attributes_dict != new_method_attributes:
                             raise ValueError(
                                 f"\nERROR: Conflict in attributes for {method_name_global}_{method_name_specif}. Change specific method name or fix the attributes.\n"
@@ -247,3 +247,17 @@ class Launcher:
                 """
             f.write(file_str)
             f.close()
+
+
+def _get_attributes_dict_from_method(method):
+    attributes_dict = vars(method).copy()
+    attributes_dict.pop("random_state", None)
+    if "base_estimator" in attributes_dict:
+        base_estimator_params = vars(attributes_dict["base_estimator"]).copy()
+        base_estimator_params.pop("random_state", None)
+        base_estimator_params = {k: str(v) for k, v in base_estimator_params.items()}
+        attributes_dict["base_estimator_params"] = base_estimator_params
+        attributes_dict["base_estimator"] = str(attributes_dict["base_estimator"]).split("(")[
+            0
+        ]
+    return attributes_dict

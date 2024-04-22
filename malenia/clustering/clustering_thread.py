@@ -66,56 +66,29 @@ if dataset.type == "time_series":
     X_test, y_test = load_from_tsfile(
         os.path.join(dataset.path, dataset.name) + f"/{dataset.name}_TEST.ts"
     )
-elif dataset.type == "orreview":
-    import pandas as pd
-
-    train = pd.read_csv(
-        os.path.join(dataset.path, dataset.name, f"train_{dataset.name}.{str(0)}"),
-        sep=" ",
-        header=None,
-    )
-    test = pd.read_csv(
-        os.path.join(dataset.path, dataset.name, f"test_{dataset.name}.{str(0)}"),
-        sep=" ",
-        header=None,
-    )
-    X_train = train.iloc[:, :-1]
-    y_train = train.iloc[:, -1]
-    del train
-    X_test = test.iloc[:, :-1]
-    y_test = test.iloc[:, -1]
-    del test
+    # Join X_train and X_test (numpy arrays)
+    X = np.concatenate((X_train, X_test))
+    del X_train, X_test
+    y = np.concatenate((y_train, y_test))
+    y = y.astype(int)
+    del y_train, y_test
 elif dataset.type == "tabular_tsoc":
     import pandas as pd
 
-    train = pd.read_csv(
-        os.path.join(dataset.path, dataset.name, f"{dataset.name}_TRAIN.csv"),
+    data = pd.read_csv(
+        os.path.join(dataset.path, dataset.name, f"{dataset.name}.csv"),
     )
-    test = pd.read_csv(
-        os.path.join(dataset.path, dataset.name, f"{dataset.name}_TEST.csv"),
-    )
-    X_train = train.drop(columns=["target"])
-    y_train = train["target"]
-    del train
-    X_test = test.drop(columns=["target"])
-    y_test = test["target"]
-    del test
+    X = data.drop(columns=["target"]).to_numpy()
+    y = data["target"].to_numpy()
 
 del dataset
 #
-if hasattr(X_train, "reset_index"):
-    X_train.reset_index(drop=True, inplace=True)
-    X_test.reset_index(drop=True, inplace=True)
-if hasattr(y_train, "reset_index"):
-    y_train.reset_index(drop=True, inplace=True)
-    y_test.reset_index(drop=True, inplace=True)
+if hasattr(X, "reset_index"):
+    X.reset_index(drop=True, inplace=True)
+if hasattr(y, "reset_index"):
+    y.reset_index(drop=True, inplace=True)
 #
-# Join X_train and X_test (numpy arrays)
-X = np.concatenate((X_train, X_test))
-del X_train, X_test
-y = np.concatenate((y_train, y_test))
-y = y.astype(int)
-del y_train, y_test
+
 # check if data has nans
 if np.count_nonzero(np.isnan(X)) or np.count_nonzero(np.isnan(y)):
     raise ValueError("Training data has nan values!")
