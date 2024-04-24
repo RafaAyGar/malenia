@@ -256,8 +256,9 @@ def _get_attributes_dict_from_method(method):
         base_estimator_params = vars(attributes_dict["base_estimator"]).copy()
         base_estimator_params.pop("random_state", None)
         base_estimator_params = {k: str(v) for k, v in base_estimator_params.items()}
-        attributes_dict["base_estimator_params"] = base_estimator_params
         attributes_dict["base_estimator"] = str(attributes_dict["base_estimator"]).split("(")[
             0
         ]
+        attributes_dict["base_estimator_params"] = base_estimator_params
+    attributes_dict = {k: str(v) for k, v in attributes_dict.items()}
     return attributes_dict

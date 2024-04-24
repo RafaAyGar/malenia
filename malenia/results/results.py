@@ -140,6 +140,8 @@ class Results:
         print("Evaluating results...")
         self.methods_real_names = []
         self.n_datasets_per_unique_n_classes = dict()
+        _total_iters = len(self.methods) * len(self._datasets) * self.seeds
+        _current_iter = 0
         for method_pretty, method_info in self.methods.items():
             method_real = method_info
             self.methods_real_names.append(method_real)
@@ -155,97 +157,102 @@ class Results:
                             results_path_test,
                         )
                         print("Skipping fold...")
-                    continue
-
-                self.results["dataset"].append(dataset)
-                self.results["method"].append(method_pretty)
-                self.results["seed"].append(seed)
-
-                df_test = pd.read_csv(results_path_test)
-
-                if ("fit_estimator_start_time" not in df_test.columns) or (
-                    "fit_estimator_end_time" not in df_test.columns
-                ):
-                    self.results["runtime"].append(0)
                 else:
-                    start_time = df_test["fit_estimator_start_time"][0]
-                    end_time = df_test["fit_estimator_end_time"][0]
-                    start = pd.to_datetime(start_time)
-                    end = pd.to_datetime(end_time)
-                    total_minutes = (end - start).total_seconds() / 60
-                    self.results["runtime"].append(total_minutes)
 
-                y_true = df_test["y_true"]
-                y_pred = df_test["y_pred"]
+                    self.results["dataset"].append(dataset)
+                    self.results["method"].append(method_pretty)
+                    self.results["seed"].append(seed)
 
-                ###
-                ## Compute number of datasets per unique number of classes
-                #
-                n_classes = len(y_true.unique())
-                if n_classes not in self.n_datasets_per_unique_n_classes:
-                    self.n_datasets_per_unique_n_classes[n_classes] = 1
-                else:
-                    self.n_datasets_per_unique_n_classes[n_classes] += 1
-                ###
+                    df_test = pd.read_csv(results_path_test)
 
-                ###
-                ## Compute per class predictions
-                #
-                self.per_class_predictions[method_pretty + "_" + dataset] = (
-                    self._get_per_class_predictions(y_true, y_pred)
-                )
-                ###
+                    if ("fit_estimator_start_time" not in df_test.columns) or (
+                        "fit_estimator_end_time" not in df_test.columns
+                    ):
+                        self.results["runtime"].append(0)
+                    else:
+                        start_time = df_test["fit_estimator_start_time"][0]
+                        end_time = df_test["fit_estimator_end_time"][0]
+                        start = pd.to_datetime(start_time)
+                        end = pd.to_datetime(end_time)
+                        total_minutes = (end - start).total_seconds() / 60
+                        self.results["runtime"].append(total_minutes)
 
-                ###
-                ## Compute per class recall for every method-dataset-fold pair
-                #
-                per_class_recall_detail = self._get_per_class_recall_detail(y_true, y_pred)
-                self.per_class_recall_detail[
-                    method_pretty + "_" + dataset + "_" + str(seed)
-                ] = per_class_recall_detail
-                ###
+                    y_true = df_test["y_true"]
+                    y_pred = df_test["y_pred"]
 
-                ###
-                ## Check if per class recall detail has the same number of classes as y_true
-                #
-                try:
-                    assert n_classes == len(per_class_recall_detail)
-                except:
-                    y_true_uniques = y_true.unique()
-                    y_true_uniques.sort()
-                    y_pred_uniques = y_pred.unique()
-                    y_pred_uniques.sort()
-                    print("per class recall detail: ", per_class_recall_detail)
-                    print("len per class recall detail: ", len(per_class_recall_detail))
-                    print("n_classes: ", n_classes)
-                    raise Exception(
-                        f"Error in method/dataset pair -> {method_pretty}/{dataset}/{seed}:\n\tY true and Y pred have different number of classes:\n\t y_true: {y_true_uniques}\n\t y_pred: {y_pred_uniques}"
+                    ###
+                    ## Compute number of datasets per unique number of classes
+                    #
+                    n_classes = len(y_true.unique())
+                    if n_classes not in self.n_datasets_per_unique_n_classes:
+                        self.n_datasets_per_unique_n_classes[n_classes] = 1
+                    else:
+                        self.n_datasets_per_unique_n_classes[n_classes] += 1
+                    ###
+
+                    ###
+                    ## Compute per class predictions
+                    #
+                    self.per_class_predictions[method_pretty + "_" + dataset] = (
+                        self._get_per_class_predictions(y_true, y_pred)
                     )
-                ###
+                    ###
 
-                ###
-                ## Compute per class recall for every method in every group of datasets with unique nº of classes
-                #
-                if method_pretty not in self.per_class_recall:
-                    self.per_class_recall[method_pretty] = dict()
+                    ###
+                    ## Compute per class recall for every method-dataset-fold pair
+                    #
+                    per_class_recall_detail = self._get_per_class_recall_detail(y_true, y_pred)
+                    self.per_class_recall_detail[
+                        method_pretty + "_" + dataset + "_" + str(seed)
+                    ] = per_class_recall_detail
+                    ###
 
-                if n_classes not in self.per_class_recall[method_pretty]:
-                    self.per_class_recall[method_pretty][n_classes] = [per_class_recall_detail]
-                else:
-                    self.per_class_recall[method_pretty][n_classes].append(
-                        per_class_recall_detail
-                    )
-                ###
+                    ###
+                    ## Check if per class recall detail has the same number of classes as y_true
+                    #
+                    try:
+                        assert n_classes == len(per_class_recall_detail)
+                    except:
+                        y_true_uniques = y_true.unique()
+                        y_true_uniques.sort()
+                        y_pred_uniques = y_pred.unique()
+                        y_pred_uniques.sort()
+                        print("per class recall detail: ", per_class_recall_detail)
+                        print("len per class recall detail: ", len(per_class_recall_detail))
+                        print("n_classes: ", n_classes)
+                        raise Exception(
+                            f"Error in method/dataset pair -> {method_pretty}/{dataset}/{seed}:\n\tY true and Y pred have different number of classes:\n\t y_true: {y_true_uniques}\n\t y_pred: {y_pred_uniques}"
+                        )
+                    ###
 
-                ###
-                ## Metrics computation
-                #
-                for metric_name, metric in self.metrics.items():
-                    if not metric_name in self.results:
-                        self.results[metric_name] = []
-                    metric_result = self._get_metric_results(metric, y_true, y_pred)
-                    self.results[metric_name].append(metric_result)
-                ###
+                    ###
+                    ## Compute per class recall for every method in every group of datasets with unique nº of classes
+                    #
+                    if method_pretty not in self.per_class_recall:
+                        self.per_class_recall[method_pretty] = dict()
+
+                    if n_classes not in self.per_class_recall[method_pretty]:
+                        self.per_class_recall[method_pretty][n_classes] = [
+                            per_class_recall_detail
+                        ]
+                    else:
+                        self.per_class_recall[method_pretty][n_classes].append(
+                            per_class_recall_detail
+                        )
+                    ###
+
+                    ###
+                    ## Metrics computation
+                    #
+                    for metric_name, metric in self.metrics.items():
+                        if not metric_name in self.results:
+                            self.results[metric_name] = []
+                        metric_result = self._get_metric_results(metric, y_true, y_pred)
+                        self.results[metric_name].append(metric_result)
+                    ###
+
+                _current_iter += 1
+                print("Progress: ", _current_iter, "/", _total_iters, end="\r")
 
         ###
         ## End computation of number of datasets per unique number of classes
