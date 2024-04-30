@@ -3,9 +3,8 @@ import math
 import os
 import sys
 
-from joblib import dump
-
 import malenia
+from joblib import dump
 
 
 def get_data_aug_name(data_aug_object):
@@ -87,27 +86,13 @@ class Launcher:
     ):
         params = ""
         for dataset in self.datasets:
-            dataset_path = self._dump_in_condor_tmp_path(dataset.name, dataset)
-            method_info_saved = False
             for method_name, method in self.methods.items():
                 (
                     method_name_global,
                     method_name_specif,
                     seed,
                 ) = self._extract_global_and_specific_method_name(method_name)
-                # if self.transformed_data_path is not None:
-                #     transformed_data_path = os.path.join(self.transformed_data_path, dataset.name, f"train_fold_{seed}.pkl")
-                # else:
-                #     transformed_data_path = None
-                cv_path = self._dump_in_condor_tmp_path("cv", self.cv)
-                if isinstance(method, list):
-                    data_augmentation = self._dump_in_condor_tmp_path(
-                        get_data_aug_name(method[1]), method[1]
-                    )
-                    method = method[0]
-                else:
-                    data_augmentation = None
-                method_path = self._dump_in_condor_tmp_path(method_name, method)
+
                 results_filename = "seed_" + seed
                 results_path = os.path.join(
                     self.results_path,
@@ -125,6 +110,21 @@ class Launcher:
                     print(f"SKIPPING - {results_path} already exists")
                     continue
 
+                ## Save dataset, cv and method to condor tmp folder.
+                #
+                dataset_path = self._dump_in_condor_tmp_path(dataset.name, dataset)
+                cv_path = self._dump_in_condor_tmp_path("cv", self.cv)
+                if isinstance(method, list):
+                    data_augmentation = self._dump_in_condor_tmp_path(
+                        get_data_aug_name(method[1]), method[1]
+                    )
+                    method = method[0]
+                else:
+                    data_augmentation = None
+                method_path = self._dump_in_condor_tmp_path(method_name, method)
+
+                ## Build task parameters.
+                #
                 params += (
                     dataset_path
                     + ","
@@ -163,11 +163,13 @@ class Launcher:
                     + str(do_save_cv_results)
                     + "\n"
                 )
+
+                ## Save method attributes and configurations to a JSON file.
+                #
                 method_results_path = os.path.join(
                     self.results_path,
                     method_name_global,
                     method_name_specif,
-                    # ,
                 )
                 if not os.path.exists(
                     os.path.join(
