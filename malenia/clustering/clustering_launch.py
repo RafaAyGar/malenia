@@ -13,12 +13,14 @@ class ClusteringLauncher:
         results_path,
         condor_files_path="condor_files",
         submission_params=None,
+        do_train_test_split=False,
     ):
         self.methods = methods
         self.datasets = datasets
         self.results_path = results_path
 
         self.submission_params = submission_params
+        self.do_train_test_split = do_train_test_split
 
         self.condor_files_path = condor_files_path
         self.condor_tmp_path = os.path.join(self.condor_files_path, "tmp")
@@ -136,7 +138,14 @@ class ClusteringLauncher:
 
         # get python environment path
         python_path = sys.executable
-        thread_path = os.path.join(malenia.__path__[0], "clustering/clustering_thread.py")
+
+        if self.do_train_test_split:
+            thread_path = os.path.join(
+                malenia.__path__[0], "clustering/clustering_thread_train_split.py"
+            )
+        else:
+            thread_path = os.path.join(malenia.__path__[0], "clustering/clustering_thread.py")
+
         if not os.path.exists(thread_path):
             raise Exception("thread.py not found in", thread_path)
 

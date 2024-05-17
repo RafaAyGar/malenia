@@ -80,6 +80,10 @@ elif dataset.type == "tabular_tsoc":
     )
     X = data.drop(columns=["target"]).to_numpy()
     y = data["target"].to_numpy()
+elif dataset.type == "tabular":
+    raise NotImplementedError()
+else:
+    raise ValueError("Dataset type not recognized.")
 
 del dataset
 #

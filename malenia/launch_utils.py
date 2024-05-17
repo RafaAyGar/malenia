@@ -20,8 +20,12 @@ def get_datasets(data_types_and_paths, limited_databases, excluded_databases):
     for data_type, data_path in data_types_and_paths.items():
         databases = os.listdir(data_path)
         databases.sort()
-        for db in databases if limited_databases == "use_all" else limited_databases:
-            if db not in excluded_databases:
-                datasets.append(Dataset(name=db, dataset_type=data_type, path=data_path))
+        for db in databases:
+            if limited_databases == "use_all":
+                if db not in excluded_databases:
+                    datasets.append(Dataset(name=db, dataset_type=data_type, path=data_path))
+            else:
+                if db in limited_databases:
+                    datasets.append(Dataset(name=db, dataset_type=data_type, path=data_path))
 
     return datasets

@@ -15,9 +15,10 @@ def save_predictions(
     posthoc_end_time,
     job_info,
     results_path,
+    train_or_test="train",
     # y_pred_reverse=None,
 ):
-    path = get_job_path(job_info, results_path) + "clusters.csv"
+    path = get_job_path(job_info, results_path) + train_or_test + ".csv"
 
     if not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path), exist_ok=True)

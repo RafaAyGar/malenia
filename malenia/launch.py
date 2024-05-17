@@ -3,8 +3,9 @@ import math
 import os
 import sys
 
-import malenia
 from joblib import dump
+
+import malenia
 
 
 def get_data_aug_name(data_aug_object):
@@ -83,6 +84,7 @@ class Launcher:
         save_fitted_methods=False,
         overwrite_fitted_methods=False,
         do_save_cv_results=False,
+        force_if_param_change=False,
     ):
         params = ""
         for dataset in self.datasets:
@@ -171,11 +173,14 @@ class Launcher:
                     method_name_global,
                     method_name_specif,
                 )
-                if not os.path.exists(
-                    os.path.join(
-                        method_results_path,
-                        f"{method_name_global}_{method_name_specif}_attributes.json",
+                if (
+                    not os.path.exists(
+                        os.path.join(
+                            method_results_path,
+                            f"{method_name_global}_{method_name_specif}_attributes.json",
+                        )
                     )
+                    or force_if_param_change
                 ):
                     attributes_dict = _get_attributes_dict_from_method(method)
 
@@ -254,9 +259,19 @@ class Launcher:
 def _get_attributes_dict_from_method(method):
     attributes_dict = vars(method).copy()
     attributes_dict.pop("random_state", None)
+    # if attributes_dict "best_file_name" key exists, remove it:
+    if "best_file_name" in attributes_dict:
+        attributes_dict.pop("best_file_name", None)
+    if "last_file_name" in attributes_dict:
+        attributes_dict.pop("last_file_name", None)
+
     if "base_estimator" in attributes_dict:
         base_estimator_params = vars(attributes_dict["base_estimator"]).copy()
         base_estimator_params.pop("random_state", None)
+        if "best_file_name" in base_estimator_params:
+            base_estimator_params.pop("best_file_name", None)
+        if "last_file_name" in base_estimator_params:
+            base_estimator_params.pop("last_file_name", None)
         base_estimator_params = {k: str(v) for k, v in base_estimator_params.items()}
         attributes_dict["base_estimator"] = str(attributes_dict["base_estimator"]).split("(")[
             0

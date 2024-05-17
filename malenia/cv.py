@@ -5,7 +5,7 @@ from aeon.utils.sampling import stratified_resample
 
 
 class OrcaPythonCV:
-    def __init__(self, total_folds):
+    def __init__(self, total_folds=30):
         self.total_folds = total_folds
 
     def get_fold_from_disk(self, dataset, fold):
@@ -30,7 +30,7 @@ class OrcaPythonCV:
 
 
 class StratifiedCV:
-    def __init__(self, total_folds):
+    def __init__(self, total_folds=30):
         self.total_folds = total_folds
 
     def apply(self, X_train, y_train, X_test, y_test, fold):
