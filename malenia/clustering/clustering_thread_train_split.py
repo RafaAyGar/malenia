@@ -93,7 +93,11 @@ elif dataset.type == "orreview":
         ]
     )
     X_train, X_test, y_train, y_test = train_test_split(
-        data.iloc[:, :-1], data.iloc[:, -1], test_size=0.33, random_state=fold
+        data.iloc[:, :-1],
+        data.iloc[:, -1],
+        stratify=data.iloc[:, -1],
+        test_size=0.33,
+        random_state=fold,
     )
     del data
     X_train = X_train.to_numpy()
@@ -119,27 +123,32 @@ if type(method_clus) is str:
     ### Load clusters and distances from disk
     ##
     #
-    saved_clusters_fold = 0
     # Find the fold of the saved clusters (usually is zero as clustering methods
     # doesn't have a stochastic component)
-    if os.path.exists(os.path.join(method_clus, dataset_name, f"seed_{fold}_clusters.csv")):
-        saved_clusters_fold = fold
-    else:
-        saved_clusters_fold = 0
-    # Load clusters and distances
-    clusters_path = os.path.join(
-        method_clus, dataset_name, f"seed_{saved_clusters_fold}_clusters.csv"
+    clusters_train_path = os.path.join(method_clus, dataset_name, f"seed_{fold}_train.csv")
+    clusters_test_path = os.path.join(method_clus, dataset_name, f"seed_{fold}_test.csv")
+
+    if (not os.path.exists(clusters_train_path)) or (not os.path.exists(clusters_test_path)):
+        raise FileNotFoundError(
+            f"Train or Test clusters saved file does not exist. Path: {clusters_train_path}"
+        )
+
+    clusters_results_train = pd.read_csv(clusters_train_path)
+    clusters_results_test = pd.read_csv(clusters_test_path)
+
+    clusters_train = clusters_results_train["y_pred"].to_numpy()
+    clusters_test = clusters_results_test["y_pred"].to_numpy()
+    train_clusters_dist = np.load(
+        os.path.join(
+            method_clus,
+            dataset_name,
+            f"seed_{fold}_final_clusters_dist.npy",
+        )
     )
-    distances_path = os.path.join(
-        method_clus,
-        dataset_name,
-        f"seed_{saved_clusters_fold}_final_clusters_dist.npy",
-    )
-    clusters_results = pd.read_csv(clusters_path)
-    clusters_train = clusters_results["y_pred"].to_numpy()
-    train_clusters_dist = np.load(distances_path)
-    clustering_train_start_time = clusters_results["clustering_start_time"]
-    clustering_train_end_time = clusters_results["clustering_end_time"]
+    clustering_train_start_time = clusters_results_train["clustering_start_time"]
+    clustering_train_end_time = clusters_results_train["clustering_end_time"]
+    clustering_test_start_time = clusters_results_test["clustering_start_time"]
+    clustering_test_end_time = clusters_results_test["clustering_end_time"]
 else:
     ### Fit and Predict on test and get clusters and distances
     ##
@@ -177,11 +186,15 @@ if method_posthoc is None:
 else:
     posthoc_train_start_time = Timestamp.now()
     method_posthoc = method_posthoc.find_OLO(train_clusters_dist)
-    clusters_train, clusters_train_reverse = method_posthoc.apply_OLO(clusters_train)
+    clusters_train, clusters_train_reverse = method_posthoc.apply_OLO(
+        clusters_train, train_clusters_dist, y_train
+    )
     posthoc_train_end_time = Timestamp.now()
 
     posthoc_test_start_time = Timestamp.now()
-    clusters_test, clusters_test_reverse = method_posthoc.apply_OLO(clusters_test)
+    clusters_test, clusters_test_reverse = method_posthoc.apply_OLO(
+        clusters_test, train_clusters_dist, y_test
+    )
     posthoc_test_end_time = Timestamp.now()
 
 

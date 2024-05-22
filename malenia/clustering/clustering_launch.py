@@ -86,7 +86,8 @@ class ClusteringLauncher:
                     results_filename,
                 )
                 if (
-                    os.path.exists(results_path + "_clusters.csv")
+                    os.path.exists(results_path + "_test.csv")
+                    and (os.path.exists(results_path + "_train.csv"))
                     and overwrite_predictions == False
                 ):
                     print(f"SKIPPING - {results_path} already exists")
