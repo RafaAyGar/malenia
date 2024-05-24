@@ -68,7 +68,6 @@ class ClusteringLauncher:
     ):
         params = ""
         for dataset in self.datasets:
-            dataset_path = self._dump_in_condor_tmp_path(dataset.name, dataset)
             for method_name, method in self.methods.items():
                 (
                     method_name_global,
@@ -76,7 +75,6 @@ class ClusteringLauncher:
                     seed,
                 ) = self._extract_global_and_specific_method_name(method_name)
 
-                method_path = self._dump_in_condor_tmp_path(method_name, method)
                 results_filename = "seed_" + seed
                 results_path = os.path.join(
                     self.results_path,
@@ -93,6 +91,8 @@ class ClusteringLauncher:
                     print(f"SKIPPING - {results_path} already exists")
                     continue
 
+                method_path = self._dump_in_condor_tmp_path(method_name, method)
+                dataset_path = self._dump_in_condor_tmp_path(dataset.name, dataset)
                 params += (
                     dataset_path
                     + ","
