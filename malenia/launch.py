@@ -51,10 +51,17 @@ class Launcher:
 
     def _dump_in_condor_tmp_path(self, file_name, content):
         dest_path = os.path.join(self.condor_tmp_path, file_name)
+
+        if dest_path in self.dumped_files:
+            return dest_path
+
         if not os.path.exists(os.path.dirname(dest_path)):
             os.makedirs(os.path.dirname(dest_path))
+
         with open(dest_path, "wb") as f:
             dump(content, f)
+            self.dumped_files.append(dest_path)
+
         return dest_path
 
     def _extract_global_and_specific_method_name(self, method_name):
@@ -87,6 +94,8 @@ class Launcher:
         force_if_param_change=False,
     ):
         params = ""
+        launched_methods = []
+        self.dumped_files = []
         for dataset in self.datasets:
             for method_name, method in self.methods.items():
                 (
@@ -168,6 +177,10 @@ class Launcher:
 
                 ## Save method attributes and configurations to a JSON file.
                 #
+                # We do not want this to be executed for every seed
+                if method_name_global + method_name_specif in launched_methods:
+                    continue
+                #
                 method_results_path = os.path.join(
                     self.results_path,
                     method_name_global,
@@ -212,6 +225,7 @@ class Launcher:
                             raise ValueError(
                                 f"\nERROR: Conflict in attributes for {method_name_global}_{method_name_specif}. Change specific method name or fix the attributes.\n"
                             )
+                launched_methods.append(method_name_global + method_name_specif)
 
         with open(self.condor_tmp_path + "/task_params.txt", "w") as f:
             f.write(params)

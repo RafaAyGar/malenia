@@ -3,9 +3,10 @@ import sys
 
 import malenia
 from joblib import dump
+from malenia.launch import Launcher
 
 
-class ClusteringLauncher:
+class ClusteringLauncher(Launcher):
     def __init__(
         self,
         methods,
@@ -33,40 +34,13 @@ class ClusteringLauncher:
                 for name in dirs:
                     os.rmdir(os.path.join(root, name))
 
-    def _dump_in_condor_tmp_path(self, file_name, content):
-        dest_path = os.path.join(self.condor_tmp_path, file_name)
-        if not os.path.exists(os.path.dirname(dest_path)):
-            os.makedirs(os.path.dirname(dest_path))
-        with open(dest_path, "wb") as f:
-            dump(content, f)
-        return dest_path
-
-    def _extract_global_and_specific_method_name(self, method_name):
-        method_name_global = method_name.split("_")[0]
-        method_full_name = method_name.split("_seed")[0]
-
-        if (
-            method_name_global == method_full_name
-        ):  # if the specific method name is not specified
-            method_name_specific = "Default"
-            seed = method_name.split("_seed")[1]
-        else:
-            method_name_specif_with_seed = ""
-            for part in method_name.split("_")[1:]:
-                method_name_specif_with_seed += part + "_"
-            method_name_specific = method_name_specif_with_seed.split("_seed")[0]
-            seed = method_name_specif_with_seed.split("_seed")[1][
-                :-1
-            ]  # [:-1] to remove last "_"
-
-        return method_name_global, method_name_specific, seed
-
     def launch(
         self,
         overwrite_predictions=False,
         save_final_cluster_distances=False,
     ):
         params = ""
+        self.dumped_files = []
         for dataset in self.datasets:
             for method_name, method in self.methods.items():
                 (
