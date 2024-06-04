@@ -318,8 +318,14 @@ class Results:
 
         return missing_results
 
-    def get_wins_ties_losses(self, metric_name):
-        results_by_method = self.get_results_by_dataset_metric(metric_name)
+    def get_wins_ties_losses(self, results_by_method=None, metric_name=None):
+        if results_by_method is None and metric_name is None:
+            raise ValueError(
+                "Either pass a results by dataset dataframe or a valid metric name"
+            )
+        elif metric_name is not None and results_by_method is None:
+            results_by_method = self.get_results_by_dataset_metric(metric_name)
+
         methods = results_by_method.columns.values
         win_tie_losses = pd.DataFrame(index=methods)
         for strat1 in methods:

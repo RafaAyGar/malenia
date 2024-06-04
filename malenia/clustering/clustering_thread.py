@@ -5,7 +5,10 @@ from logging import StreamHandler, getLogger
 import numpy as np
 import pandas as pd
 from joblib import load
-from malenia.clustering.clustering_aux import save_final_cluster_distances, save_predictions
+from malenia.clustering.clustering_aux import (
+    save_final_cluster_distances,
+    save_predictions,
+)
 from pandas import Timestamp
 
 ## Uncomment when using sktime-dl methods
@@ -66,32 +69,36 @@ if dataset.type == "time_series":
     X_test, y_test = load_from_tsfile(
         os.path.join(dataset.path, dataset.name) + f"/{dataset.name}_TEST.ts"
     )
-    # Join X_train and X_test (numpy arrays)
-    X = np.concatenate((X_train, X_test))
-    del X_train, X_test
-    y = np.concatenate((y_train, y_test))
-    y = y.astype(int)
-    del y_train, y_test
-elif dataset.type == "tabular_tsoc":
-    import pandas as pd
+    X_train = X_train.reshape(X_train.shape[0], -1)
+    X_test = X_test.reshape(X_test.shape[0], -1)
+    X = np.concatenate([X_train, X_test], axis=0)
+    y = np.concatenate([y_train, y_test], axis=0).astype(int)
+    del X_train, y_train, X_test, y_test
 
-    data = pd.read_csv(
-        os.path.join(dataset.path, dataset.name, f"{dataset.name}.csv"),
+elif dataset.type == "orreview":
+    import pandas as pd
+    from sklearn.model_selection import train_test_split
+
+    data = pd.concat(
+        [
+            pd.read_csv(
+                os.path.join(dataset.path, dataset.name, f"train_{dataset.name}.0"),
+                header=None,
+                sep=" ",
+            ),
+            pd.read_csv(
+                os.path.join(dataset.path, dataset.name, f"test_{dataset.name}.0"),
+                header=None,
+                sep=" ",
+            ),
+        ]
     )
-    X = data.drop(columns=["target"]).to_numpy()
-    y = data["target"].to_numpy()
-elif dataset.type == "tabular":
-    raise NotImplementedError()
-else:
-    raise ValueError("Dataset type not recognized.")
+    X = data.iloc[:, :-1].to_numpy()
+    y = data.iloc[:, -1].to_numpy()
 
 del dataset
-#
-if hasattr(X, "reset_index"):
-    X.reset_index(drop=True, inplace=True)
-if hasattr(y, "reset_index"):
-    y.reset_index(drop=True, inplace=True)
-#
+
+y = y.astype(int)
 
 # check if data has nans
 if np.count_nonzero(np.isnan(X)) or np.count_nonzero(np.isnan(y)):
@@ -110,7 +117,9 @@ if type(method_clus) is str:
     saved_clusters_fold = 0
     # Find the fold of the saved clusters (usually is zero as clustering methods
     # doesn't have a stochastic component)
-    if os.path.exists(os.path.join(method_clus, dataset_name, f"seed_{fold}_clusters.csv")):
+    if os.path.exists(
+        os.path.join(method_clus, dataset_name, f"seed_{fold}_clusters.csv")
+    ):
         saved_clusters_fold = fold
     else:
         saved_clusters_fold = 0
@@ -136,7 +145,15 @@ else:
     clustering_start_time = Timestamp.now()
     clusters = method_clus.fit_predict(X)
     clustering_end_time = Timestamp.now()
-    final_cluster_dist = method_clus.get_final_cluster_dist()
+
+    if hasattr(method_clus, "get_final_cluster_dist"):
+        final_cluster_dist = method_clus.get_final_cluster_dist()
+    else:
+        from sklearn.metrics import pairwise_distances
+
+        final_cluster_dist = pairwise_distances(method_clus.cluster_centers_)
+        final_cluster_dist[np.where(final_cluster_dist == 0.0)] = np.inf
+
     del X, method_clus
 
 
@@ -149,7 +166,10 @@ if method_posthoc is None:
     posthoc_start_time = Timestamp.now()
 else:
     posthoc_start_time = Timestamp.now()
-    clusters, clusters_reverse = method_posthoc(clusters, final_cluster_dist, y)
+    method_posthoc = method_posthoc.find_OLO(final_cluster_dist)
+    clusters, clusters_reverse = method_posthoc.apply_OLO(
+        clusters, final_cluster_dist, y
+    )
     posthoc_end_time = Timestamp.now()
 
 
@@ -180,6 +200,7 @@ try:
         posthoc_end_time=posthoc_end_time,
         job_info=job_info,
         results_path=results_path,
+        train_or_test="clusters",
     )
     log.warning(f"Done! - Fit {job_info} saved!")
 except Exception as e:

@@ -217,6 +217,15 @@ else:
 #
 ###
 
+### PEQUEÑO APAÑO PARA LO DEL CHECKPOINTING EN FICHERO TEMPORAL
+##
+#
+if hasattr(method, "file_path"):
+    from tempfile import mkdtemp
+
+    print("* File path attribute went to temporal file")
+    method.file_path = mkdtemp()
+
 
 ### Fit estimator measuring time
 ##
