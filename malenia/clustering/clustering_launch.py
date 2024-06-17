@@ -105,6 +105,10 @@ class ClusteringLauncher(Launcher):
             f.write(params)
             f.close()
 
+        print(f"We have {len(self.datasets)} datasets")
+        print(f"We have {len(self.methods)/self.seeds} methods")
+        print(f"→ A maximum of {len(self.methods) * len(self.datasets)} jobs will be launch")
+
         self._write_condor_task_sub(self.submission_params)
         os.system("condor_submit " + self.condor_tmp_path + "/task.sub")
 
