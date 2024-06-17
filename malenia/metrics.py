@@ -8,8 +8,11 @@ def amae(y, ypred):
     costes = np.reshape(np.tile(range(n_class), n_class), (n_class, n_class))
     costes = np.abs(costes - np.transpose(costes))
     errores = costes * cm
-    amaes = np.sum(errores, axis=1) / np.sum(cm, axis=1).astype("double")
-    amaes = amaes[~np.isnan(amaes)]
+    non_zero_cm_rows = ~np.all(cm == 0, axis=1)
+    cm_ = cm[non_zero_cm_rows]
+    errores_ = errores[non_zero_cm_rows]
+    amaes = np.sum(errores_, axis=1) / np.sum(cm_, axis=1).astype("double")
+    # amaes_no_nans = amaes[~np.isnan(amaes)]
     return np.mean(amaes)
 
 

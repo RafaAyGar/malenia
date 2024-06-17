@@ -57,11 +57,18 @@ class ClusteringLauncher(Launcher):
                     dataset.name,
                     results_filename,
                 )
-                if (
-                    os.path.exists(results_path + "_test.csv")
-                    and (os.path.exists(results_path + "_train.csv"))
-                    and overwrite_predictions == False
-                ):
+                if self.do_train_test_split:
+                    skip_condition = (
+                        os.path.exists(results_path + "_test.csv")
+                        and (os.path.exists(results_path + "_train.csv"))
+                        and overwrite_predictions == False
+                    )
+                else:
+                    skip_condition = (
+                        os.path.exists(results_path + "_clusters.csv")
+                        and overwrite_predictions == False
+                    )
+                if skip_condition:
                     print(f"SKIPPING - {results_path} already exists")
                     continue
 
@@ -119,7 +126,9 @@ class ClusteringLauncher(Launcher):
                 malenia.__path__[0], "clustering/clustering_thread_train_split.py"
             )
         else:
-            thread_path = os.path.join(malenia.__path__[0], "clustering/clustering_thread.py")
+            thread_path = os.path.join(
+                malenia.__path__[0], "clustering/clustering_thread.py"
+            )
 
         if not os.path.exists(thread_path):
             raise Exception("thread.py not found in", thread_path)

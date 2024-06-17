@@ -227,6 +227,10 @@ class Launcher:
                             )
                 launched_methods.append(method_name_global + method_name_specif)
 
+        print(f"We have {len(self.datasets)} datasets")
+        print(f"We have {len(self.methods)/self.seeds} methods")
+        print(f"→ A maximum of {len(self.methods) * len(self.datasets)} jobs will be launch")
+
         with open(self.condor_tmp_path + "/task_params.txt", "w") as f:
             f.write(params)
             f.close()
