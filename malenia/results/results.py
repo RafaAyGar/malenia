@@ -120,6 +120,9 @@ class Results:
             not evaluations_binaries_folder is None
         )
 
+        if not os.path.exists(self.results_path):
+            raise FileNotFoundError(f"Results path {self.results_path} does not exists!")
+
         if trying_to_load_or_save_evaluated_results_binaries:
             if not os.path.exists(evaluations_binaries_folder):
                 os.mkdir(evaluations_binaries_folder)
