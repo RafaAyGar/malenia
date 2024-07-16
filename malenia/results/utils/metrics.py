@@ -5,8 +5,9 @@ from sklearn.metrics import confusion_matrix
 ## Class to declare metrics to be used in the evaluation of the results
 #
 class Metric:
-    def __init__(self, metric, **kwargs):
+    def __init__(self, metric, work_with_probas=False, **kwargs):
         self.metric = metric
+        self.work_with_probas = work_with_probas
         self.kwargs = kwargs
 
     def compute(self, y_true, y_pred):

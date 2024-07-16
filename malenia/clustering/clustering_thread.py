@@ -75,7 +75,7 @@ if dataset.type == "time_series":
     y = np.concatenate([y_train, y_test], axis=0).astype(int)
     del X_train, y_train, X_test, y_test
 
-elif dataset.type == "orreview":
+elif dataset.type == "tabular":
     import pandas as pd
     from sklearn.model_selection import train_test_split
 

@@ -54,7 +54,9 @@ class Results:
 
         if not self.excluded_datasets is None:
             self._datasets = [
-                dataset for dataset in self._datasets if dataset not in self.excluded_datasets
+                dataset
+                for dataset in self._datasets
+                if dataset not in self.excluded_datasets
             ]
 
     def _extract_global_and_specific_method_name(self, method_name):
@@ -82,8 +84,11 @@ class Results:
                 )
                 yield (specified_dataset, seed, path_test)
 
-    def _get_metric_results(self, metric, y_true, y_pred):
-        return metric.compute(y_true, y_pred)
+    def _get_metric_results(self, metric, y_true, y_pred, y_proba):
+        if metric.work_with_probas:
+            return metric.compute(y_true, y_proba)
+        else:
+            return metric.compute(y_true, y_pred)
 
     def _get_per_class_predictions(self, y_true, y_pred):
         y_true_value_counts = y_true.value_counts()
@@ -121,7 +126,9 @@ class Results:
         )
 
         if not os.path.exists(self.results_path):
-            raise FileNotFoundError(f"Results path {self.results_path} does not exists!")
+            raise FileNotFoundError(
+                f"Results path {self.results_path} does not exists!"
+            )
 
         if trying_to_load_or_save_evaluated_results_binaries:
             if not os.path.exists(evaluations_binaries_folder):
@@ -135,7 +142,9 @@ class Results:
                 last_id = int(str(evaluation_binaries[-1]).split("_")[-1].split(".")[0])
 
                 for evaluation in evaluation_binaries:
-                    evaluation = load(os.path.join(evaluations_binaries_folder, evaluation))
+                    evaluation = load(
+                        os.path.join(evaluations_binaries_folder, evaluation)
+                    )
                     if self._is_equal_to(evaluation):
                         print("Results already evaluated. Loading from binary file.")
                         return evaluation
@@ -182,6 +191,10 @@ class Results:
 
                     y_true = df_test["y_true"]
                     y_pred = df_test["y_pred"]
+                    if "y_proba" in df_test.columns:
+                        y_proba = df_test["y_proba"]
+                    else:
+                        y_proba = None
 
                     ###
                     ## Compute number of datasets per unique number of classes
@@ -204,7 +217,9 @@ class Results:
                     ###
                     ## Compute per class recall for every method-dataset-fold pair
                     #
-                    per_class_recall_detail = self._get_per_class_recall_detail(y_true, y_pred)
+                    per_class_recall_detail = self._get_per_class_recall_detail(
+                        y_true, y_pred
+                    )
                     self.per_class_recall_detail[
                         method_pretty + "_" + dataset + "_" + str(seed)
                     ] = per_class_recall_detail
@@ -221,7 +236,10 @@ class Results:
                         y_pred_uniques = y_pred.unique()
                         y_pred_uniques.sort()
                         print("per class recall detail: ", per_class_recall_detail)
-                        print("len per class recall detail: ", len(per_class_recall_detail))
+                        print(
+                            "len per class recall detail: ",
+                            len(per_class_recall_detail),
+                        )
                         print("n_classes: ", n_classes)
                         raise Exception(
                             f"Error in method/dataset pair -> {method_pretty}/{dataset}/{seed}:\n\tY true and Y pred have different number of classes:\n\t y_true: {y_true_uniques}\n\t y_pred: {y_pred_uniques}"
@@ -247,10 +265,13 @@ class Results:
                     ###
                     ## Metrics computation
                     #
+                    # print("Dataset:", dataset, "Method:", method_pretty, "Seed:", seed)
                     for metric_name, metric in self.metrics.items():
                         if not metric_name in self.results:
                             self.results[metric_name] = []
-                        metric_result = self._get_metric_results(metric, y_true, y_pred)
+                        metric_result = self._get_metric_results(
+                            metric, y_true, y_pred, y_proba
+                        )
                         self.results[metric_name].append(metric_result)
                     ###
 
@@ -284,15 +305,6 @@ class Results:
         ###
 
         self.results = pd.DataFrame(self.results)
-        self.results = self.results.round(self.rounding_decimals)
-        self.results_by_method_dataset = self.results.groupby(["dataset", "method"]).mean(
-            numeric_only=True
-        )
-        self.results_by_method_dataset = self.results_by_method_dataset.drop(columns=["seed"])
-        self.results_by_method_dataset = self.results_by_method_dataset.reset_index()
-        self.results_by_method_dataset = self.results_by_method_dataset.round(
-            self.rounding_decimals
-        )
 
         if trying_to_load_or_save_evaluated_results_binaries:
             dump(
@@ -304,6 +316,24 @@ class Results:
             )
 
         return self
+
+    def get_results_by_method_dataset(self):
+        results_by_method_dataset = self.results.groupby(["dataset", "method"]).mean(
+            numeric_only=True
+        )
+        results_by_method_dataset = results_by_method_dataset.drop(columns=["seed"])
+        results_by_method_dataset = results_by_method_dataset.reset_index()
+        return results_by_method_dataset
+
+    def get_results_by_method_dataset_std(self):
+        results_by_method_dataset_std = self.results.groupby(["dataset", "method"]).std(
+            numeric_only=True
+        )
+        results_by_method_dataset_std = results_by_method_dataset_std.drop(
+            columns=["seed"]
+        )
+        results_by_method_dataset_std = results_by_method_dataset_std.reset_index()
+        return results_by_method_dataset_std
 
     def get_missing_results(self):
         missing_results = dict()
@@ -356,20 +386,51 @@ class Results:
         return win_tie_losses
 
     def get_results_by_method(self):
-        self.results_by_method = self.results_by_method_dataset.groupby(["method"]).mean(
-            numeric_only=True
+        results_by_method = (
+            self.get_results_by_method_dataset()
+            .groupby(["method"])
+            .mean(numeric_only=True)
         )
-        self.results_by_method = self.results_by_method.sort_values(
+        results_by_method = results_by_method.sort_values(
             by=list(self.metrics.keys()), ascending=False
         )
-        self.results_by_method = self.results_by_method.reset_index()
-        self.results_by_method.set_index("method", inplace=True)
-        self.results_by_method = self.results_by_method.round(self.rounding_decimals)
-        return self.results_by_method
+        results_by_method = results_by_method.reset_index()
+        results_by_method.set_index("method", inplace=True)
+        # results_by_method = results_by_method.round(self.rounding_decimals)
+        return results_by_method
+
+    def get_results_by_method_metric_subset_with_std(self, metric_subset=["mae"]):
+        results_by_method = self.get_results_by_method_dataset()
+        results_by_method = results_by_method.groupby(["method"]).mean(
+            numeric_only=True
+        )
+        results_by_method = results_by_method[metric_subset].sort_values(
+            by=metric_subset, ascending=False
+        )
+        results_by_method = results_by_method.reset_index()
+        results_by_method.set_index("method", inplace=True)
+
+        results_by_method_std = self.get_results_by_method_dataset_std()
+        results_by_method_std = results_by_method_std.groupby(["method"]).mean(
+            numeric_only=True
+        )
+        results_by_method_std = results_by_method_std[metric_subset].sort_values(
+            by=metric_subset, ascending=False
+        )
+        results_by_method_std = results_by_method_std.reset_index()
+        results_by_method_std.set_index("method", inplace=True)
+
+        return pd.concat(
+            [
+                results_by_method.add_suffix(" (mean)"),
+                results_by_method_std.add_suffix(" (std)"),
+            ],
+            axis=1,
+        ).sort_index(axis=1)
 
     def get_results_by_dataset_metric(self, metric, results_by_method_dataset=None):
         if results_by_method_dataset is None:
-            results_by_method_dataset = self.results_by_method_dataset
+            results_by_method_dataset = self.get_results_by_method_dataset()
 
         df = results_by_method_dataset.sort_values(["dataset", "method"])
         results_by_methods_dataset_metric = df[
@@ -378,7 +439,7 @@ class Results:
         for pretty_method_name in self.methods.keys():
             method_results = list(df[df["method"] == pretty_method_name][metric])
             results_by_methods_dataset_metric[pretty_method_name] = method_results
-            results_by_methods_dataset_metric[pretty_method_name].round(self.rounding_decimals)
+            # results_by_methods_dataset_metric[pretty_method_name].round(self.rounding_decimals)
             results_by_methods_dataset_metric["dataset"] = df["dataset"].unique()
         final_results_by_methods_dataset_metric = results_by_methods_dataset_metric[
             ["dataset"] + list(self.methods.keys())
@@ -388,29 +449,35 @@ class Results:
         )
         final_results_by_methods_dataset_metric.sort_values(by=["dataset"])
         final_results_by_methods_dataset_metric.set_index("dataset", inplace=True)
-        final_results_by_methods_dataset_metric = (
-            final_results_by_methods_dataset_metric.round(self.rounding_decimals)
-        )
+        # final_results_by_methods_dataset_metric = (
+        # final_results_by_methods_dataset_metric.round(self.rounding_decimals)
+        # )
         return final_results_by_methods_dataset_metric
 
     def get_mean_results_by_method_dataset_nclasses(self, metric):
         datafolder = self.datasets.split("/")[-2]
         results = self.get_results_by_dataset_metric(metric)
-        datasets_info_path = os.path.join("/home/rayllon/DATA", datafolder + "_info.json")
+        datasets_info_path = os.path.join(
+            "/home/rayllon/DATA", datafolder + "_info.json"
+        )
         if not os.path.exists(datasets_info_path):
             print("* Could not extract results by nº of classes!")
         datasets_info = json.load(open(datasets_info_path))
 
         for dataset in results.index:
-            results.loc[dataset, "Nº Classes"] = int(datasets_info[dataset]["n_classes"])
+            results.loc[dataset, "Nº Classes"] = int(
+                datasets_info[dataset]["n_classes"]
+            )
         results["Nº Classes"] = results["Nº Classes"].astype(int)
         return results
 
     def get_mean_results_by_method_nclasses(self, metric):
-        results_by_method_dataset_nclasses = self.get_mean_results_by_method_dataset_nclasses(
-            metric
+        results_by_method_dataset_nclasses = (
+            self.get_mean_results_by_method_dataset_nclasses(metric)
         )
-        results_by_classes = results_by_method_dataset_nclasses.groupby("Nº Classes").mean()
+        results_by_classes = results_by_method_dataset_nclasses.groupby(
+            "Nº Classes"
+        ).mean()
         results_by_classes["Nº Datasets per nº class"] = (
             results_by_method_dataset_nclasses.groupby("Nº Classes").size()
         )
@@ -430,7 +497,9 @@ class Results:
                 new_cols.append(rank_col)
 
             metric_results_by_dataset = metric_results_by_dataset[new_cols]
-            metric_results_by_dataset["Datasets"] = metric_results_by_dataset.index.values
+            metric_results_by_dataset["Datasets"] = (
+                metric_results_by_dataset.index.values
+            )
             metric_results_by_dataset = metric_results_by_dataset.set_index("Datasets")
             metric_results_by_dataset.to_excel(output_file)
         return metric_results_by_dataset

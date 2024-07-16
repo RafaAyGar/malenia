@@ -3,6 +3,72 @@ import pandas as pd
 from malenia.results.plots.cdd import get_rankings
 
 
+def export_dataframe_to_latex(
+    df,
+    greaterIsBetter=True,
+    rounding_decimals=3,
+    filename=None,
+):
+    data = df.round(rounding_decimals).copy()
+    latex = pd.DataFrame(
+        np.empty((len(data.index), len(data.columns)), dtype=str),
+        columns=data.columns,
+        index=data.index,
+    )
+
+    # Apply formatting to the dataframe
+    for dataset in data.index:
+        # Format the accuracy values as mean with standard deviation
+        for method in data.columns:
+            mean = str(data.loc[dataset, method]).ljust(
+                4, "0"
+            )
+            latex.loc[dataset, method] = f"${mean}$"
+
+        # Find the best and second-best methods for the current dataset
+        if greaterIsBetter and dataset != "Rankings":
+            best_method = data.loc[dataset].idxmax()
+            second_best_method = data.loc[dataset].drop(best_method).idxmax()
+        else:
+            best_method = data.loc[dataset].idxmin()
+            second_best_method = data.loc[dataset].drop(best_method).idxmin()
+
+        best_mean = str(data.loc[dataset, best_method]).ljust(
+            4, "0"
+        )
+        sec_best_mean = str(data.loc[dataset, second_best_method]).ljust(
+            4, "0"
+        )
+        if dataset != "Rankings":
+            # best_std = str(stds.loc[dataset, best_method]).ljust(
+            #     4, "0"
+            # )
+            # sec_best_std = str(stds.loc[dataset, second_best_method]).ljust(
+            #     4, "0"
+            # )
+            latex.loc[dataset, best_method] = (
+                f"$\\mathbf{'{'}{best_mean}{'}'}$"
+            )
+            latex.loc[dataset, second_best_method] = (
+                f"$\\mathit{'{'}{sec_best_mean}{'}'}$"
+            )
+        else:
+            latex.loc[dataset, best_method] = f"$\\mathbf{'{'}{best_mean}{'}'}$"
+            latex.loc[dataset, second_best_method] = (
+                f"$\\mathit{'{'}{sec_best_mean}{'}'}$"
+            )
+
+    latex = latex.T
+
+    # Write the formatted dataframe to a LaTeX table file
+    if not filename is None:
+        with open(filename, "w") as f:
+            f.write("\\newcolumntype{M}[1]{>{\\arraybackslash}m{#1}}\n")
+            f.write(latex.style.to_latex(column_format="@{}M{3.9cm}ccccc@{}"))
+
+    return latex
+
+
 def export_results_method_to_latex(
     results,
     metrics="all",

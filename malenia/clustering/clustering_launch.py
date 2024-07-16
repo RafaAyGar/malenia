@@ -12,6 +12,7 @@ class ClusteringLauncher(Launcher):
         methods,
         datasets,
         results_path,
+        seeds=30,
         condor_files_path="condor_files",
         submission_params=None,
         do_train_test_split=False,
@@ -19,6 +20,7 @@ class ClusteringLauncher(Launcher):
         self.methods = methods
         self.datasets = datasets
         self.results_path = results_path
+        self.seeds = seeds
 
         self.submission_params = submission_params
         self.do_train_test_split = do_train_test_split

@@ -156,7 +156,7 @@ if dataset.type == "time_series":
         os.path.join(dataset.path, dataset.name) + f"/{dataset.name}_TEST.ts"
     )
     X_train, y_train, X_test, y_test = cv.apply(X_train, y_train, X_test, y_test, fold)
-elif dataset.type == "orreview":
+elif dataset.type == "tabular":
     import pandas as pd
 
     train = pd.read_csv(
