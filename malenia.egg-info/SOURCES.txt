@@ -23,6 +23,7 @@ malenia/clustering/__init__.py
 malenia/clustering/clustering_aux.py
 malenia/clustering/clustering_launch.py
 malenia/clustering/clustering_thread.py
+malenia/clustering/clustering_thread_train_split.py
 malenia/data_augmentation/__init__.py
 malenia/data_augmentation/_utils.py
 malenia/data_augmentation/aug.py

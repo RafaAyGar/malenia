@@ -1,0 +1,1 @@
+/home/rayllon/GitHub/malenia/malenia/results/fancy/__init__.py
