@@ -5,7 +5,7 @@ from sklearn.metrics import confusion_matrix
 
 def rank_probability_score(y, yproba):
     y = np.array(y)
-    yproba = np.array([list(map(float, item.strip('[]').split())) for item in yproba])
+    yproba = np.array([list(map(float, item.strip("[]").split())) for item in yproba])
 
     y = np.clip(y, 0, yproba.shape[1] - 1)
 
@@ -22,6 +22,11 @@ def rank_probability_score(y, yproba):
         else:
             rps += 1
     return rps / len(y)
+
+
+def class_sensitivity(y, ypred, class_id):
+    cm = confusion_matrix(y, ypred)
+    return cm[class_id, class_id] / cm[class_id].sum()
 
 
 def amae(y, ypred):
@@ -47,12 +52,14 @@ def mmae(y, ypred):
     amaes = amaes[~np.isnan(amaes)]
     return amaes.max()
 
+
 def tkendall(y, ypred):
     """
     Value of +1 indicate strong agreement and value of -1 indicate strong DISagreement.
     """
     corr, _ = scipy.stats.kendalltau(y, ypred)
     return corr
+
 
 def spearman(y, ypred):
     """
@@ -68,6 +75,7 @@ def spearman(y, ypred):
     #     return num / div
     corr, _ = scipy.stats.spearmanr(y, ypred)
     return corr
+
 
 # def gm(y, ypred):
 #     with warnings.catch_warnings():

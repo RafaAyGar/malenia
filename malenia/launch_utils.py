@@ -1,8 +1,6 @@
 import os
 from dataclasses import dataclass
 
-from malenia.dataset import Dataset
-
 
 @dataclass
 class CondorParams:
@@ -15,7 +13,9 @@ class CondorParams:
     request_memory: str = "1G"
 
 
-def get_datasets(data_types_and_paths, limited_databases, excluded_databases):
+def get_datasets_from_types_paths_dict(data_types_and_paths, limited_databases, excluded_databases):
+    from malenia.dataset import Dataset
+
     datasets = []
     for data_type, data_path in data_types_and_paths.items():
         databases = os.listdir(data_path)
@@ -27,5 +27,22 @@ def get_datasets(data_types_and_paths, limited_databases, excluded_databases):
             else:
                 if db in limited_databases:
                     datasets.append(Dataset(name=db, dataset_type=data_type, path=data_path))
+
+    return datasets
+
+
+def get_datasets_from_path(datasets_path, limited_databases, excluded_databases):
+    from malenia.dataset import Dataset
+
+    datasets = []
+    databases = os.listdir(datasets_path)
+    databases.sort()
+    for db in databases:
+        if limited_databases == "use_all":
+            if db not in excluded_databases:
+                datasets.append(Dataset(name=db, dataset_type="unknown", path=datasets_path))
+        else:
+            if db in limited_databases:
+                datasets.append(Dataset(name=db, dataset_type="unknown", path=datasets_path))
 
     return datasets

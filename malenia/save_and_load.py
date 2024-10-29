@@ -42,7 +42,10 @@ def save_predictions(
 
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
-    y_proba = np.asarray(y_proba)
+    if y_proba is not None:
+        y_proba = np.asarray(y_proba)
+    else:
+        y_proba = np.ones(y_true.shape) * -1
     if oob_probas is not None:
         oob_probas = np.asarray(oob_probas)
     else:
@@ -53,6 +56,48 @@ def save_predictions(
             "y_pred": y_pred,
             "y_proba": pd.Series(list(y_proba)),
             "oob_probas": pd.Series(list(oob_probas)),
+            "fit_estimator_start_time": fit_estimator_start_time,
+            "fit_estimator_end_time": fit_estimator_end_time,
+            "predict_estimator_start_time": predict_estimator_start_time,
+            "predict_estimator_end_time": predict_estimator_end_time,
+        }
+    )
+    preds.to_csv(path, index=False)
+
+
+def save_predictions_multitask_multifarm(
+    y_true,
+    y_pred,
+    tasks,
+    farms,
+    fit_estimator_start_time,
+    fit_estimator_end_time,
+    predict_estimator_start_time,
+    predict_estimator_end_time,
+    train_or_test,
+    job_info,
+    results_path,
+):
+    path = get_job_path(job_info, results_path) + train_or_test + ".csv"
+
+    if not os.path.exists(os.path.dirname(path)):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    y_true_pred_per_farm_task = {}
+    for farm_name, farm_index in farms.items():
+        for task_name, task_index in tasks.items():
+            y_true_name = f"y_true_{farm_name}_{task_name}"
+            y_pred_name = f"y_pred_{farm_name}_{task_name}"
+            if len(farms) == 1:
+                y_true_pred_per_farm_task[y_true_name] = y_true[:, task_index]
+                y_true_pred_per_farm_task[y_pred_name] = y_pred[:, task_index]
+            else:
+                y_true_pred_per_farm_task[y_true_name] = y_true[farm_index, :, task_index]
+                y_true_pred_per_farm_task[y_pred_name] = y_pred[farm_index, :, task_index]
+
+    preds = pd.DataFrame(
+        {
+            **y_true_pred_per_farm_task,
             "fit_estimator_start_time": fit_estimator_start_time,
             "fit_estimator_end_time": fit_estimator_end_time,
             "predict_estimator_start_time": predict_estimator_start_time,
