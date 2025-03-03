@@ -17,7 +17,6 @@ malenia/util_tests.py
 malenia.egg-info/PKG-INFO
 malenia.egg-info/SOURCES.txt
 malenia.egg-info/dependency_links.txt
-malenia.egg-info/requires.txt
 malenia.egg-info/top_level.txt
 malenia/clustering/__init__.py
 malenia/clustering/clustering_aux.py
@@ -34,6 +33,7 @@ malenia/feature_selection/feature_importance.py
 malenia/feature_selection/feature_selector.py
 malenia/results/__init__.py
 malenia/results/results.py
+malenia/results/results_utils.py
 malenia/results/_tests/results_test.py
 malenia/results/exports/__init__.py
 malenia/results/exports/latex.py

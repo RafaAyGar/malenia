@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 from joblib import load
 
-from aeon.datasets import load_from_tsfile
-
 
 class Dataset:
     def __init__(self, name, dataset_type, path):
@@ -15,6 +13,7 @@ class Dataset:
 
 
 class TSDataset:
+
     def __init__(
         self,
         path,
@@ -24,12 +23,10 @@ class TSDataset:
         self.name = name
 
     def load(self, fold):
-        X_train, y_train = load_from_tsfile(
-            os.path.join(self.path, self.name) + f"/{self.name}_TRAIN.ts"
-        )
-        X_test, y_test = load_from_tsfile(
-            os.path.join(self.path, self.name) + f"/{self.name}_TEST.ts"
-        )
+        from aeon.datasets import load_from_tsfile
+
+        X_train, y_train = load_from_tsfile(os.path.join(self.path, self.name) + f"/{self.name}_TRAIN.ts")
+        X_test, y_test = load_from_tsfile(os.path.join(self.path, self.name) + f"/{self.name}_TEST.ts")
         return X_train, y_train, X_test, y_test
 
 
@@ -45,12 +42,8 @@ class OrcaPythonDataset:
         self.name = name
 
     def load(self, fold):
-        train = pd.read_csv(
-            os.path.join(self.path, f"train_{self.name}.0"), sep=" ", header=None
-        )
-        test = pd.read_csv(
-            os.path.join(self.path, f"test_{self.name}.0"), sep=" ", header=None
-        )
+        train = pd.read_csv(os.path.join(self.path, f"train_{self.name}.0"), sep=" ", header=None)
+        test = pd.read_csv(os.path.join(self.path, f"test_{self.name}.0"), sep=" ", header=None)
         X_train = np.array(train.iloc[:, :-1])
         y_train = train.iloc[:, -1]
         X_test = np.array(test.iloc[:, :-1])
@@ -71,12 +64,8 @@ class TabularDataset:
         self.name = name
 
     def load(self, fold):
-        train = pd.read_csv(
-            os.path.join(self.path, f"train_{self.name}.0"), sep=" ", header=None
-        )
-        test = pd.read_csv(
-            os.path.join(self.path, f"test_{self.name}.0"), sep=" ", header=None
-        )
+        train = pd.read_csv(os.path.join(self.path, f"train_{self.name}.0"), sep=" ", header=None)
+        test = pd.read_csv(os.path.join(self.path, f"test_{self.name}.0"), sep=" ", header=None)
         X_train = train.drop(columns=["target"])
         y_train = train["target"]
         X_test = test.drop(columns=["target"])

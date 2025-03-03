@@ -7,8 +7,6 @@ from joblib import dump
 
 def get_job_path(job_info, results_path):
     job_info = job_info.split("___")
-    for j in job_info:
-        print("****", j)
     path = os.path.join(results_path, job_info[0], job_info[1], job_info[2], "seed_" + job_info[3] + "_")
     return path
 

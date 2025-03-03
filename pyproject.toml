@@ -12,15 +12,15 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
 ]
-dependencies = [
-    "numpy",
-    "pandas",
-    "joblib",
-    "scikit-learn",
-    "matplotlib",
-    "scipy",
-    "aeon",
-]
+# dependencies = [
+#     "numpy",
+#     "pandas",
+#     "joblib",
+#     "scikit-learn",
+#     "matplotlib",
+#     "scipy",
+#     "aeon",
+# ]
 
 [project.urls]
 Homepage = "https://github.com/RafaAyGar/malenia"
