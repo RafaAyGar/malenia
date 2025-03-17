@@ -29,17 +29,27 @@ def class_sensitivity(y, ypred, class_id):
     return cm[class_id, class_id] / cm[class_id].sum()
 
 
-def amae(y, ypred):
-    cm = confusion_matrix(y, ypred)
+def amae(y_true: np.ndarray, y_pred: np.ndarray):
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+
+    if len(y_true.shape) > 1:
+        y_true = np.argmax(y_true, axis=1)
+    if len(y_pred.shape) > 1:
+        y_pred = np.argmax(y_pred, axis=1)
+
+    cm = confusion_matrix(y_true, y_pred)
     n_class = cm.shape[0]
-    costes = np.reshape(np.tile(range(n_class), n_class), (n_class, n_class))
-    costes = np.abs(costes - np.transpose(costes))
-    errores = costes * cm
+    costs = np.reshape(np.tile(range(n_class), n_class), (n_class, n_class))
+    costs = np.abs(costs - np.transpose(costs))
+    errors = costs * cm
+
     non_zero_cm_rows = ~np.all(cm == 0, axis=1)
-    cm_ = cm[non_zero_cm_rows]
-    errores_ = errores[non_zero_cm_rows]
-    amaes = np.sum(errores_, axis=1) / np.sum(cm_, axis=1).astype("double")
-    return np.mean(amaes)
+    errors = errors[non_zero_cm_rows]
+    cm = cm[non_zero_cm_rows]
+
+    per_class_maes = np.sum(errors, axis=1) / np.sum(cm, axis=1).astype("double")
+    return np.mean(per_class_maes)
 
 
 def mmae(y, ypred):

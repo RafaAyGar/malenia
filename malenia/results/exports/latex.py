@@ -61,6 +61,7 @@ def export_mean_and_std_dataframes_to_latex(
             latex.loc[dataset, second_best_method] = f"$\\mathit{'{'}{sec_best_mean}{'}'}$"
 
     latex = latex.T
+    latex = latex.sort_index(axis=1)
 
     # Write the formatted dataframe to a LaTeX table file
     if filename is not None:

@@ -18,6 +18,15 @@ def save_method(method, job_info, results_path):
     dump(method, path)
 
 
+def one_hot_probas_encoder(n_classes, classes):
+    if not isinstance(classes, np.ndarray):
+        classes = np.array(classes)
+    probas = np.zeros((len(classes), n_classes)).astype(np.float32)
+    for i, c in enumerate(classes):
+        probas[i, c] = 1.0
+    return pd.Series(list(probas))
+
+
 def save_predictions(
     y_true,
     y_pred,
@@ -39,9 +48,10 @@ def save_predictions(
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
     if y_proba is not None:
-        y_proba = np.asarray(y_proba)
+        y_proba = pd.Series(list(np.asarray(y_proba)))
     else:
-        y_proba = np.ones(y_true.shape) * -1
+        y_proba = one_hot_probas_encoder(len(np.unique(y_true)), y_pred)
+
     if oob_probas is not None:
         oob_probas = np.asarray(oob_probas)
     else:
@@ -50,7 +60,7 @@ def save_predictions(
         {
             "y_true": y_true,
             "y_pred": y_pred,
-            "y_proba": pd.Series(list(y_proba)),
+            "y_proba": y_proba,
             "oob_probas": pd.Series(list(oob_probas)),
             "fit_estimator_start_time": fit_estimator_start_time,
             "fit_estimator_end_time": fit_estimator_end_time,
@@ -78,14 +88,14 @@ def save_predictions_with_fit_time(
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
     if y_proba is not None:
-        y_proba = np.asarray(y_proba)
+        y_proba = pd.Series(list(np.asarray(y_proba)))
     else:
-        y_proba = np.ones(y_true.shape) * -1
+        y_proba = one_hot_probas_encoder(len(np.unique(y_true)), y_pred)
     preds = pd.DataFrame(
         {
             "y_true": y_true,
             "y_pred": y_pred,
-            "y_proba": pd.Series(list(y_proba)),
+            "y_proba": y_proba,
             "fit_time": fit_time,
         }
     )

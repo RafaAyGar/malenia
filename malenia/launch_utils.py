@@ -31,13 +31,15 @@ def get_datasets_from_types_paths_dict(data_types_and_paths, limited_databases, 
     return datasets
 
 
-def get_datasets_from_path(datasets_path, limited_databases, excluded_databases):
+def get_datasets_from_path(datasets_path, limited_databases, excluded_databases, remove_dotcsv=False):
     from malenia.dataset import Dataset
 
     datasets = []
     databases = os.listdir(datasets_path)
     databases.sort()
     for db in databases:
+        if remove_dotcsv:
+            db = db.replace(".csv", "")
         if limited_databases == "use_all":
             if db not in excluded_databases:
                 datasets.append(Dataset(name=db, dataset_type="unknown", path=datasets_path))
