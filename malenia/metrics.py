@@ -5,7 +5,6 @@ from sklearn.metrics import confusion_matrix
 
 def rank_probability_score(y, yproba):
     y = np.array(y)
-    yproba = np.array([list(map(float, item.strip("[]").split())) for item in yproba])
 
     y = np.clip(y, 0, yproba.shape[1] - 1)
 

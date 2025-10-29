@@ -32,6 +32,7 @@ malenia/feature_selection/_utils.py
 malenia/feature_selection/feature_importance.py
 malenia/feature_selection/feature_selector.py
 malenia/results/__init__.py
+malenia/results/recol_utils_global.py
 malenia/results/results.py
 malenia/results/results_utils.py
 malenia/results/_tests/results_test.py

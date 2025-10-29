@@ -4,7 +4,6 @@ import os
 import numpy as np
 import pandas as pd
 from joblib import dump, load
-from sklearn.metrics import recall_score
 
 
 class Results:
@@ -103,6 +102,7 @@ class Results:
         return per_class_predictions
 
     def _get_per_class_recall_detail(self, y_true, y_pred):
+        from sklearn.metrics import recall_score
         labels = np.unique(y_true)
         return recall_score(y_true, y_pred, average=None, labels=labels)
 

@@ -6,7 +6,6 @@ from itertools import chain
 
 import numpy as np
 import pandas as pd
-from sklearn.utils import check_random_state
 
 class OrcaPythonCV:
     def __init__(self, total_folds=30):
@@ -52,6 +51,7 @@ class StratifiedCV:
 
 
 def stratified_resample(X_train, y_train, X_test, y_test, random_state=None):
+    from sklearn.utils import check_random_state
     random_state = check_random_state(random_state)
     all_labels = np.concatenate([y_train, y_test], axis=0)
     if isinstance(X_train, pd.DataFrame):
